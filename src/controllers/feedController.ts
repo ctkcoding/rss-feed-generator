@@ -1,0 +1,1 @@
+// endpoint to retrieve generated xml
