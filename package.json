@@ -4,7 +4,7 @@
   "description": "generate an rss feed from local or remote sources and feed a generated xml document to podcast players",
   "main": "dist/app.js",
   "scripts": {
-    "start": "tsc && node dist/app.js",
+    "start": "tsc && node dist/server.js",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,6 +20,7 @@
     "typescript-eslint": "^8.38.0"
   },
   "dependencies": {
+    "dotenv": "^17.2.1",
     "express": "^4.17.1"
   }
 }
