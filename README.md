@@ -8,5 +8,5 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 - parsing service (abstract interface)
 
 ### parsing services
-- hit soundgasm a url + parse
-- review a local dir + parse
+- review a local dir and parse. serve local files
+- hit url with dir and parse. link to url's files
