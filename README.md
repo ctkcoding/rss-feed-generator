@@ -2,6 +2,7 @@
 generate an rss feed from local or remote sources and feed a generated xml document to podcast players
 
 ## todos/app parts
+- generate an rss document
 - write a rss file to dir (file writer and xml generator)
 - serve the rss file to api endpoint
 - cron job for checking new documents

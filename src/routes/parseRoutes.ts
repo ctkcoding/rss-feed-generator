@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { parse } from '../controllers/parseController';
+import { parseLocal } from '../controllers/parseController';
 
 
 const router = Router();
-router.get('/run', parse)
+router.get('/local', parseLocal)
 
 export default router;
