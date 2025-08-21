@@ -2,21 +2,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
-class fileWriter {
+export class FileWriter {
 
     // takes content
     // writes it to file
-    writeFile() {
-        let data = "test"
-        fs.readFile(path.join(__dirname, "filename.txt"), (err, data) => {
-            if (err) throw err;
+    // write(filename: string, content: string (?))
+    public writeFile(data: string) {
+        // todo - directories saved in constants file
+        let filePath = path.join(path.join(__dirname, '..'), '..', "rss.xml");
+        fs.writeFile(filePath, data, () => {
             console.log(data);
         })
-
     }
 
-    // write(filename: string, content: string (?))
-    // todo - what type to hold document in
 
 }
 

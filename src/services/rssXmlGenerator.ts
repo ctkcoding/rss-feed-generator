@@ -1,7 +1,6 @@
 import RSS from 'rss';
 import { Show } from '../models/show';
 
-
 // https://validator.w3.org/feed/
 
 // todo - provide as function or service? whats better in js
@@ -18,17 +17,19 @@ export const generateRssXml = (show: Show) => {
         title: show.title,
         description: show.description,
         feed_url: show.link,
+        // todo - site url vs feed url?
         site_url: 'https://music.apple.com/us/curator/time-crisis/993269786',
         // Optional: language, image_url, etc.
     });
 
-    show.episodes.forEach(post => {
+    show.episodes.forEach(episode => {
         feed.item({
-            title: post.title,
-            description: post.description,
-            url: post.url,
-            date: post.date,
-            author: post.author,
+            title: episode.title,
+            description: episode.description,
+            url: episode.url,
+            date: episode.date,
+            author: episode.author,
+            // update episodes using show details? ie for author
         });
     });
 
