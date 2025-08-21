@@ -39,7 +39,7 @@ export class FileSystemParser implements Parser
             // check if file is mp3
             if (filename.endsWith('.mp3')) {
                 console.log("it's an mp3! parsing :)", filename);
-                episodes.push(await this.parseEpisode(filename));
+                episodes.push(this.parseEpisode(filename));
                 console.log("temp episodes length: ", episodes.length);
             }
 
@@ -59,12 +59,13 @@ export class FileSystemParser implements Parser
         return show;
     }
 
-    async parseEpisode(filename: string): Promise<Episode> {
+    parseEpisode(filename: string): Episode {
         // read their metadata
         const filePath = path.join(this.episodesPath, filename);
         console.log("path: ", filePath);
-        const metadata = await mm.parseFile(filePath);
         const stats = fs.statSync(filePath);
+        // sorry! its json tho
+        const metadata: any = Promise.resolve(mm.parseFile(filePath));
         const lastModifiedDate: Date = stats.mtime; // or stats.mtimeMs for milliseconds
 
         // write data as episode             
