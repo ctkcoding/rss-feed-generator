@@ -14,10 +14,10 @@ export class Episode {
     // duration etc
 
     constructor() {
-        this.title = "todo";
-        this.description = "desc";
+        this.title = "title";
+        this.description = "description";
         this.url = "url";
         this.date = new Date();
-        this.author = "Chris";
+        this.author = "author";
       }
   }

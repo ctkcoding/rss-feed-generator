@@ -29,67 +29,53 @@ export class FileSystemParser implements Parser
         // list of string pairs. episode -> string list holding fields
         // append to string
 
-        let episodes: Episode[] = [];
         let show: Show = new Show("", "", "");
+        show = this.parseShow('show.txt');
 
         // list out files
-        fs.readdirSync(this.episodesPath).forEach( async(filename) => {
-            // will also include directory names
-            console.log(filename);
-            // check if file is mp3
-            if (filename.endsWith('.mp3')) {
-                console.log("it's an mp3! parsing :)", filename);
-                episodes.push(this.parseEpisode(filename));
-                console.log("temp episodes length: ", episodes.length);
-            }
+        fs.readdir(this.episodesPath, async (err, files) => {
+            for await (const fileName of files) {
+                // will also include directory names
+                // check if file is mp3
+                if (fileName.endsWith('.mp3')) {
+                    show.episodes.push(await this.parseEpisode(fileName));
+                    console.log("pushed episode ", fileName);
+                }
+            };
 
-            if (filename === ('show.txt')) {
-                console.log('parsing show details', filename);
-                show = this.parseShow(filename);
-            }
-    
         });
-
-        // saves into episode.ts type
-        // todo - parallel if possible a la java stream
-        show.episodes = episodes;
-
-        console.log("episode count: ", show.episodes.length)
 
         return show;
     }
 
-    parseEpisode(filename: string): Episode {
+    async parseEpisode(filename: string): Promise<Episode> {
+        let episode: Episode = new Episode();
+
         // read their metadata
         const filePath = path.join(this.episodesPath, filename);
-        console.log("path: ", filePath);
         const stats = fs.statSync(filePath);
-        // sorry! its json tho
-        const metadata: any = Promise.resolve(mm.parseFile(filePath));
-        const lastModifiedDate: Date = stats.mtime; // or stats.mtimeMs for milliseconds
+        const lastModifiedDate: Date = stats.mtime;
+        await mm.parseFile(filePath).then((metadata: any) => {
+            episode.description = metadata.common.description[0];
+            // write data as episode
+            episode.date = lastModifiedDate;
+            episode.title = filename.replace('.mp3','');
 
-        // write data as episode             
-        let episode: Episode = new Episode();
-        episode.date = lastModifiedDate;
-        episode.description = metadata['common']['description'][0];
-        episode.title = filename.replace('.mp3','');
+            // todo - episode image ?? common.picture. how do I extract this??? maybe extract on parse
 
-        // todo - episode image ?? common.picture. how do I extraxct this??? maybe extract on parse
-        // add to episodes list. NOT SHOW'S EPISODES
-        // show.episodes = [episode];
-
-        // todo - use inspect to pull show metadata etc for mp3s
-        // todo - link episode photo if exists in dir. or extract from mp3
-        // todo - set up structure for show data in a txt file
+            // todo - use inspect to pull show metadata etc for mp3s
+            // todo - link episode photo if exists in dir. or extract from mp3
+            // todo - set up structure for show data in a txt file            
+        });
         return episode;
     };
+
     parseShow(filename: string): Show {
         const filePath = path.join(this.episodesPath, filename);
-        console.log("path: ", filePath);
 
         const showJson = fs.readFileSync(filePath, 'utf8');
         let show: Show = JSON.parse(showJson);
-        console.log(show);
+        show.episodes = [];
 
         // parse show.txt for show details
         // title

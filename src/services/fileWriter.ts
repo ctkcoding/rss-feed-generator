@@ -11,7 +11,7 @@ export class FileWriter {
         // todo - directories saved in constants file
         let filePath = path.join(path.join(__dirname, '..'), '..', "rss.xml");
         fs.writeFile(filePath, data, () => {
-            console.log(data);
+            console.log("RSS written successfully!");
         })
     }
 
