@@ -22,8 +22,9 @@ export class FileSystemParser implements Parser
     //  L episode1.mp3          actual episode contents
     //  L episode1.txt          contains episode details
 
+    /// todo - move to constants util file
     private episodesPath = path.join(path.join(path.join(__dirname, '..'), '..'), '..', "/episodes"); 
-
+    private artworkPath = path.join(path.join(path.join(__dirname, '..'), '..'), '..', "/artwork/"); 
 
     public parse(): Show {
         // todo - save a log of episodes or metadata missing or without match
@@ -33,25 +34,31 @@ export class FileSystemParser implements Parser
         let show: Show = new Show("", "", "");
         show = this.parseShow('show.txt');
 
+        // todo - create artwork dir if not exists
+        // unless strip artwork flag turned off
+
         // list out files
         fs.readdirSync(this.episodesPath).forEach( fileName => {
             // will also include directory names
             // check if file is mp3
             if (fileName.endsWith('.mp3')) {
-                let episode: Episode = this.parseEpisode(fileName);
+                const filePath = path.join(this.episodesPath, fileName);
+                let episode: Episode = this.parseEpisode(filePath);
                 show.episodes.push(episode);
-                console.log("pushed episode ", fileName);
+                console.log("pushed episode ", episode);
+
+                // todo - include with metadata parsing?
+                this.extractEpisodeArtwork(filePath, episode.title);
             }
         });
 
         return show;
     }
 
-    parseEpisode(filename: string): Episode {
+    parseEpisode(filePath: string): Episode {
         let episode: Episode = new Episode();
 
         // read their metadata
-        const filePath = path.join(this.episodesPath, filename);
         const stats = fs.statSync(filePath);
         const lastModifiedDate: Date = stats.mtime;
 
@@ -78,22 +85,21 @@ export class FileSystemParser implements Parser
             console.log("ep data: ", episode);
         });
 
-
-
-
-
-        ffmetadata.read(filePath, this.generateCoverPath(filename), function(err:any , data:any ) {
-            console.log("pulled image: ", data);
-        });
-
         // todo - link episode photo if exists in dir. or extract from mp3
-
         return episode;
     };
 
-    generateCoverPath(fileName: string): any {
+    extractEpisodeArtwork(episodePath: string, artPath: string) {
+        ffmetadata.read(episodePath, this.generateCoverPath(artPath), function(err:any , data:any ) {
+            console.log("pulled image: ", data);
+        });
+    }
+
+    generateCoverPath(artPath: string): any {
+        let path = this.artworkPath + artPath + '.jpeg';
+        console.log("artPath: ", path)
         return {
-            coverPath: fileName.replace('.mp3','.jpeg'),
+            coverPath: path
           };
     }
 
