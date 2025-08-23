@@ -9,10 +9,10 @@ import {FileWriter} from '../services/fileWriter';
 let filesystemParser: FileSystemParser = new FileSystemParser;
 let fileWriter: FileWriter = new FileWriter;
 
-export const parseLocal = async (req: Request, res: Response, next: NextFunction) => {
+export const parseLocal = (req: Request, res: Response, next: NextFunction) => {
     try {
       // todo - write file from here
-      fileWriter.writeFile(generateRssXml(await filesystemParser.parse()));
+      fileWriter.writeFile(generateRssXml(filesystemParser.parse()));
       res.status(200).send('Parsing files and generating new xml');
     } catch (error) {
       next(error);

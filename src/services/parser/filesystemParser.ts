@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
-const mm = require('music-metadata');
+// const mm = import('music-metadata');
+var ffmetadata = require("ffmetadata");
 
 import { Show } from "../../models/show";
 import { Parser } from "./parser";
@@ -33,42 +34,68 @@ export class FileSystemParser implements Parser
         show = this.parseShow('show.txt');
 
         // list out files
-        fs.readdir(this.episodesPath, async (err, files) => {
-            for await (const fileName of files) {
-                // will also include directory names
-                // check if file is mp3
-                if (fileName.endsWith('.mp3')) {
-                    show.episodes.push(await this.parseEpisode(fileName));
-                    console.log("pushed episode ", fileName);
-                }
-            };
-
+        fs.readdirSync(this.episodesPath).forEach( fileName => {
+            // will also include directory names
+            // check if file is mp3
+            if (fileName.endsWith('.mp3')) {
+                let episode: Episode = this.parseEpisode(fileName);
+                show.episodes.push(episode);
+                console.log("pushed episode ", fileName);
+            }
         });
 
         return show;
     }
 
-    async parseEpisode(filename: string): Promise<Episode> {
+    parseEpisode(filename: string): Episode {
         let episode: Episode = new Episode();
 
         // read their metadata
         const filePath = path.join(this.episodesPath, filename);
         const stats = fs.statSync(filePath);
         const lastModifiedDate: Date = stats.mtime;
-        await mm.parseFile(filePath).then((metadata: any) => {
-            episode.description = metadata.common.description[0];
-            // write data as episode
-            episode.date = lastModifiedDate;
-            episode.title = filename.replace('.mp3','');
 
-            // todo - episode image ?? common.picture. how do I extract this??? maybe extract on parse
+        ffmetadata.read(filePath, function(err:any , data:any ) {
+            /*
+                data solo:  {
+                title: '001 Episode 1',
+                track: '1',
+                album: 'Time Crisis Season 1',
+                TIT3: 'Ezra kicks off his first episode with a full house.',
+                TGID: 'Time Crisis',
+                TDES: 'Ezra kicks off his first episode with a full house.',
+                date: '2015',
+                encoder: 'Lavf61.7.100'
+                }
+            */
+                episode.description = data.TDES;
+                // write data as episode
+                episode.date = lastModifiedDate;
+                episode.title = data.title;
 
-            // todo - use inspect to pull show metadata etc for mp3s
-            // todo - link episode photo if exists in dir. or extract from mp3
-            // todo - set up structure for show data in a txt file            
+                // todo - link url generated
+
+            console.log("ep data: ", episode);
         });
+
+
+
+
+
+        ffmetadata.read(filePath, this.generateCoverPath(filename), function(err:any , data:any ) {
+            console.log("pulled image: ", data);
+        });
+
+        // todo - link episode photo if exists in dir. or extract from mp3
+
         return episode;
     };
+
+    generateCoverPath(fileName: string): any {
+        return {
+            coverPath: fileName.replace('.mp3','.jpeg'),
+          };
+    }
 
     parseShow(filename: string): Show {
         const filePath = path.join(this.episodesPath, filename);
