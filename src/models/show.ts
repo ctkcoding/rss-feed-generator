@@ -14,11 +14,11 @@ export class Show {
     description: string;
     episodes: Episode[];
 
-    constructor(title: string, link: string, description: string) {
+    constructor(title: string, link: string, description: string, episodes: Episode[]) {
         this.title = title;
         this.link = link;
         this.description = description;
-        this.episodes = [];
+        this.episodes = episodes;
       }
 
       // "toRss" calls xml service

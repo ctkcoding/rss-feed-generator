@@ -15,12 +15,12 @@ import { Episode } from '../../models/episode';
 
 export class FileSystemParser implements Parser
 {
-    // takes a directory to watch
     // dir structure:
-    // - show.txt           contains show details
     // - episodes               contains episode files
     //  L episode1.mp3          actual episode contents
-    //  L episode1.txt          contains episode details
+    //  L show.txt              contains show details
+    // - artwork                contains episode art
+    //  L episode1.jpeg         stripped from episode1
 
     /// todo - move to constants util file
     private episodesPath = path.join(path.join(path.join(__dirname, '..'), '..'), '..', "/episodes"); 
@@ -31,11 +31,7 @@ export class FileSystemParser implements Parser
         // list of string pairs. episode -> string list holding fields
         // append to string
 
-        let show: Show = new Show("", "", "");
-        show = this.parseShow('show.txt');
-
-        // todo - create artwork dir if not exists
-        // unless strip artwork flag turned off
+        let episodes: Episode[] = [];
 
         // list out files
         fs.readdirSync(this.episodesPath).forEach( fileName => {
@@ -44,13 +40,20 @@ export class FileSystemParser implements Parser
             if (fileName.endsWith('.mp3')) {
                 const filePath = path.join(this.episodesPath, fileName);
                 let episode: Episode = this.parseEpisode(filePath);
-                show.episodes.push(episode);
+                episodes.push(episode);
                 console.log("pushed episode ", episode);
 
                 // todo - include with metadata parsing?
                 this.extractEpisodeArtwork(filePath, episode.title);
             }
         });
+
+        let show: Show = this.parseShow('show.txt', episodes);
+
+        // todo - create artwork dir if not exists
+        // unless strip artwork flag turned off
+
+
 
         return show;
     }
@@ -90,6 +93,7 @@ export class FileSystemParser implements Parser
     };
 
     extractEpisodeArtwork(episodePath: string, artPath: string) {
+        // todo - test when no art exists
         ffmetadata.read(episodePath, this.generateCoverPath(artPath), function(err:any , data:any ) {
             console.log("pulled image: ", data);
         });
@@ -103,12 +107,12 @@ export class FileSystemParser implements Parser
           };
     }
 
-    parseShow(filename: string): Show {
+    parseShow(filename: string, episodes: Episode[]): Show {
         const filePath = path.join(this.episodesPath, filename);
 
         const showJson = fs.readFileSync(filePath, 'utf8');
         let show: Show = JSON.parse(showJson);
-        show.episodes = [];
+        show.episodes = episodes;
 
         // parse show.txt for show details
         // title
