@@ -26,58 +26,58 @@ export class FileSystemParser implements Parser
     private episodesPath = path.join(path.join(path.join(__dirname, '..'), '..'), '..', "/episodes"); 
     private artworkPath = path.join(path.join(path.join(__dirname, '..'), '..'), '..', "/artwork/"); 
 
-    public parse(): Show {
+    public async parse(): Promise<Show> {
         // todo - save a log of episodes or metadata missing or without match
         // list of string pairs. episode -> string list holding fields
         // append to string
 
         let episodes: Episode[] = [];
 
-        // list out files
-        fs.readdirSync(this.episodesPath).forEach( fileName => {
-            // will also include directory names
-            // check if file is mp3
-            if (fileName.endsWith('.mp3')) {
-                const filePath = path.join(this.episodesPath, fileName);
-                let episode: Episode = this.parseEpisode(filePath);
-                episodes.push(episode);
-                console.log("pushed episode ", episode);
+        const fileNames = fs.readdirSync(this.episodesPath);
 
-                // todo - include with metadata parsing?
+        // Build an array of parse promises (only .mp3 files)
+        const parsePromises = fileNames
+            .filter((fileName) => fileName.endsWith('.mp3'))
+            .map(async (fileName) => {
+                const filePath = path.join(this.episodesPath, fileName);
+                const episode = await this.parseEpisode(filePath);
+                // artwork after we know the title
                 this.extractEpisodeArtwork(filePath, episode.title);
-            }
-        });
+                return episode;
+            });
+
+        // wait for all episodes to finish parsing
+        episodes = await Promise.all(parsePromises);
 
         let show: Show = this.parseShow('show.txt', episodes);
 
         // todo - create artwork dir if not exists
         // unless strip artwork flag turned off
 
-
-
         return show;
     }
 
-    parseEpisode(filePath: string): Episode {
-        let episode: Episode = new Episode();
+    parseEpisode(filePath: string): Promise<Episode> {
+        return new Promise((resolve) => {
+            let episode: Episode = new Episode();
 
-        // read their metadata
-        const stats = fs.statSync(filePath);
-        const lastModifiedDate: Date = stats.mtime;
+            // read their metadata
+            const stats = fs.statSync(filePath);
+            const lastModifiedDate: Date = stats.mtime;
 
-        ffmetadata.read(filePath, function(err:any , data:any ) {
-            /*
-                data solo:  {
-                title: '001 Episode 1',
-                track: '1',
-                album: 'Time Crisis Season 1',
-                TIT3: 'Ezra kicks off his first episode with a full house.',
-                TGID: 'Time Crisis',
-                TDES: 'Ezra kicks off his first episode with a full house.',
-                date: '2015',
-                encoder: 'Lavf61.7.100'
-                }
-            */
+            ffmetadata.read(filePath, (err: any, data: any) => {
+                /*
+                    data solo:  {
+                    title: '001 Episode 1',
+                    track: '1',
+                    album: 'Time Crisis Season 1',
+                    TIT3: 'Ezra kicks off his first episode with a full house.',
+                    TGID: 'Time Crisis',
+                    TDES: 'Ezra kicks off his first episode with a full house.',
+                    date: '2015',
+                    encoder: 'Lavf61.7.100'
+                    }
+                */
                 episode.description = data.TDES;
                 // write data as episode
                 episode.date = lastModifiedDate;
@@ -85,11 +85,10 @@ export class FileSystemParser implements Parser
 
                 // todo - link url generated
 
-            console.log("ep data: ", episode);
+                console.log("ep data: ", episode);
+                resolve(episode);
+            });
         });
-
-        // todo - link episode photo if exists in dir. or extract from mp3
-        return episode;
     };
 
     extractEpisodeArtwork(episodePath: string, artPath: string) {
@@ -104,7 +103,7 @@ export class FileSystemParser implements Parser
         console.log("artPath: ", path)
         return {
             coverPath: path
-          };
+        };
     }
 
     parseShow(filename: string, episodes: Episode[]): Show {
