@@ -25,6 +25,7 @@
     "typescript-eslint": "^8.38.0"
   },
   "dependencies": {
+    "cron": "^4.3.3",
     "dotenv": "^17.2.1",
     "express": "^4.17.1",
     "ffmetadata": "^1.7.0",
