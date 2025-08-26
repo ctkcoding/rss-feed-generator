@@ -6,5 +6,5 @@ import { Show } from "../../models/show";
 // todo - url or non-standard dir taken from env
 
 export interface Parser {
-    parse(): Show;
+    parse(): Promise<Show>;
   }
