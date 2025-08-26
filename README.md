@@ -5,7 +5,7 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 ✅ generate an rss document
 ✅ write a rss file to dir (file writer and xml generator)
 ✅ serve the rss file to api endpoint
-- cron job for checking new documents
+🚨 cron job for checking new documents
 ✅ parsing service (abstract interface)
 
 ### parsing services
@@ -13,8 +13,8 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 - hit url with dir and parse. link to url's files
 
 ## mvp plus
-- add tests in pipeline for all features
-- fix all the metadata issues for apple podcasts (ep photo, link to show, etc)
+🚨 add tests in pipeline for all features
+- review + add metadata for apple podcasts (ep photo, link to show, etc)
 - containerize it
 - how do I serve up the mp3s from here? does container handle?
 
