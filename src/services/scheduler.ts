@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 import { parseAndWriteXml } from '../controllers/parseController';
-import { Watcher } from './directoryWatcher';
+import { DirectoryWatcher } from './directoryWatcher';
 
 // runs cron jobs to schedule xml rebuilds
 
@@ -10,12 +10,11 @@ import { Watcher } from './directoryWatcher';
 // todo - mvp+ store show/ep json + cross ref before updating rss
 
 export class Scheduler {
-
-	episodeWatcher:Watcher;
+	episodeWatcher:DirectoryWatcher;
 
 	constructor() {
-        this.episodeWatcher = new Watcher;
-		// console.log("checking bool: ", this.dirWatcher.changesSinceXmlGen);
+        this.episodeWatcher = new DirectoryWatcher;
+		// console.log("checking bool: ", this.episodeWatcher.changesSinceXmlGen);
     }
 
 	

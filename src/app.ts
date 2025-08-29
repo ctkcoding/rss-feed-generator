@@ -2,7 +2,7 @@ import express from 'express';
 import healthRoutes from './routes/healthRoutes';
 import parseRoutes from './routes/parseRoutes';
 import feedRoutes from './routes/feedRoutes';
-import { Watcher } from './services/directoryWatcher';
+// import { DirectoryWatcher } from './services/directoryWatcher';
 import { Scheduler } from './services/scheduler';
 
 
