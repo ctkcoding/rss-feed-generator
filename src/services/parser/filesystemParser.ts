@@ -6,6 +6,7 @@ var ffmetadata = require("ffmetadata");
 import { Show } from "../../models/show";
 import { Parser } from "./parser";
 import { Episode } from '../../models/episode';
+import { artworkPath, episodesPath, } from '../../utils/consts';
 
 
 // implementation of parser for local dir
@@ -23,8 +24,6 @@ export class FileSystemParser implements Parser
     //  L episode1.jpeg         stripped from episode1
 
     /// todo - move to constants util file
-    private episodesPath = path.join(path.join(path.join(__dirname, '..'), '..'), '..', "/episodes"); 
-    private artworkPath = path.join(path.join(path.join(__dirname, '..'), '..'), '..', "/artwork/"); 
 
     public async parse(): Promise<Show> {
         // todo - save a log of episodes or metadata missing or without match
@@ -33,19 +32,18 @@ export class FileSystemParser implements Parser
 
         let episodes: Episode[] = [];
 
-        const fileNames = fs.readdirSync(this.episodesPath);
+        const fileNames = fs.readdirSync(episodesPath);
 
         // Build an array of parse promises (only .mp3 files)
         const parsePromises = fileNames
             .filter((fileName) => fileName.endsWith('.mp3'))
             .map(async (fileName) => {
-                const filePath = path.join(this.episodesPath, fileName);
+                const filePath = path.join(episodesPath, fileName);
                 const episode = await this.parseEpisode(filePath);
                 // artwork after we know the title
                 this.extractEpisodeArtwork(filePath, episode.title);
                 return episode;
             });
-
         // wait for all episodes to finish parsing
         episodes = await Promise.all(parsePromises);
 
@@ -99,7 +97,7 @@ export class FileSystemParser implements Parser
     }
 
     generateCoverPath(artPath: string): any {
-        let path = this.artworkPath + artPath + '.jpeg';
+        let path = artworkPath + artPath + '.jpeg';
         console.log("artPath: ", path)
         return {
             coverPath: path
@@ -107,7 +105,7 @@ export class FileSystemParser implements Parser
     }
 
     parseShow(filename: string, episodes: Episode[]): Show {
-        const filePath = path.join(this.episodesPath, filename);
+        const filePath = path.join(episodesPath, filename);
 
         const showJson = fs.readFileSync(filePath, 'utf8');
         let show: Show = JSON.parse(showJson);

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { rssFilePath } from '../utils/consts';
 
 
 export class FileWriter {
@@ -9,8 +10,7 @@ export class FileWriter {
     // write(filename: string, content: string (?))
     public writeFile(data: string) {
         // todo - directories saved in constants file
-        let filePath = path.join(path.join(__dirname, '..'), '..', "rss.xml");
-        fs.writeFile(filePath, data, () => {
+        fs.writeFile(rssFilePath, data, () => {
             console.log("RSS written successfully!");
         })
     }

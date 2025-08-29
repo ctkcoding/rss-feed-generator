@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-const episodesPath = path.join(path.join(__dirname, '..'), '..', "/episodes"); 
+import { episodesPath } from '../utils/consts';
 
 // watch for changes
 // save something for scheduler to call when it runs
