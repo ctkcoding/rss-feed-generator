@@ -13,8 +13,8 @@ export class Scheduler {
 
 	episodeWatcher:Watcher;
 
-	constructor(watcher:Watcher) {
-        this.episodeWatcher = watcher;
+	constructor() {
+        this.episodeWatcher = new Watcher;
 		// console.log("checking bool: ", this.dirWatcher.changesSinceXmlGen);
     }
 

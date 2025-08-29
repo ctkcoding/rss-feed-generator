@@ -11,8 +11,7 @@ app.use(express.json());
 
 // let fileWriter: FileWriter = new FileWriter;
 
-let watcher:Watcher = new Watcher;
-let scheduler:Scheduler = new Scheduler(watcher);
+let scheduler:Scheduler = new Scheduler;
 
 // Routes
 app.use('/api/health', healthRoutes);
