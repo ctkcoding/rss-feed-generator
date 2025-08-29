@@ -16,6 +16,7 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 
 ### parsing services
 ✅ review a local dir and parse. serve local files
+
 - hit url with dir and parse. link to url's files
 
 ## mvp plus
@@ -25,7 +26,7 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 
 - containerize it
 
-- how do I serve up the mp3s from here? does container handle?
+- how do I serve mp3s/photos? does container handle?
 
 ## future improvements
 - config for required metadata
