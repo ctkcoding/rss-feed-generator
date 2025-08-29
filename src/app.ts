@@ -1,6 +1,5 @@
 import express from 'express';
 import healthRoutes from './routes/healthRoutes';
-import parseRoutes from './routes/parseRoutes';
 import feedRoutes from './routes/feedRoutes';
 // import { DirectoryWatcher } from './services/directoryWatcher';
 import { Scheduler } from './services/scheduler';
@@ -15,7 +14,7 @@ let scheduler:Scheduler = new Scheduler;
 
 // Routes
 app.use('/api/health', healthRoutes);
-app.use('/api/parse', parseRoutes);
+// app.use('/api/parse', parseRoutes);
 app.use('/api/feed', feedRoutes);
 
 // look at levine poc if i want to copy over
