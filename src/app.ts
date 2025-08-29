@@ -2,10 +2,17 @@ import express from 'express';
 import healthRoutes from './routes/healthRoutes';
 import parseRoutes from './routes/parseRoutes';
 import feedRoutes from './routes/feedRoutes';
+import { Watcher } from './services/directoryWatcher';
+import { Scheduler } from './services/scheduler';
 
 
 const app = express();
 app.use(express.json());
+
+// let fileWriter: FileWriter = new FileWriter;
+
+let watcher:Watcher = new Watcher;
+let scheduler:Scheduler = new Scheduler(watcher);
 
 // Routes
 app.use('/api/health', healthRoutes);
