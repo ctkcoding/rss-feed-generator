@@ -10,34 +10,38 @@ import { Show } from '../models/show';
 // take feed-level details from app config
 // take per-episode details from parser's data
 
-export const generateRssXml = (show: Show) => {
+export class XmlGenerator {
 
-    // todo - should I create just one builder and re use?
-    const feed = new RSS({
-        title: show.title,
-        description: show.description,
-        feed_url: show.link,
-        // todo - site url vs feed url?
-        site_url: 'https://music.apple.com/us/curator/time-crisis/993269786',
-        // Optional: language, image_url, etc.
-    });
+    public generateRssXml(show: Show) {
 
-    show.episodes.forEach(episode => {
-        feed.item({
-            title: episode.title,
-            description: episode.description,
-            url: episode.url,
-            date: episode.date,
-            author: episode.author,
-            // update episodes using show details? ie for author
+        // todo - should I create just one builder and re use?
+        const feed = new RSS({
+            title: show.title,
+            description: show.description,
+            feed_url: show.link,
+            // todo - site url vs feed url?
+            site_url: 'https://music.apple.com/us/curator/time-crisis/993269786',
+            // Optional: language, image_url, etc.
         });
-    });
-
-
-    // add more rss tags
-
-    return feed.xml({ indent: true });
+    
+        show.episodes.forEach(episode => {
+            feed.item({
+                title: episode.title,
+                description: episode.description,
+                url: episode.url,
+                date: episode.date,
+                author: episode.author,
+                // update episodes using show details? ie for author
+            });
+        });
+    
+    
+        // add more rss tags
+    
+        return feed.xml({ indent: true });
+    }
 }
+
 
 
 /*

@@ -14,10 +14,4 @@ export class FileWriter {
             console.log("RSS written successfully!");
         })
     }
-
-
 }
-
-
-
-
