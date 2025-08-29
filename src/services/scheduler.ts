@@ -20,13 +20,13 @@ export class Scheduler {
 	
 	public episodeParseCron = new CronJob(
 		'*/15 * * * * *', // cronTime
-		this.evaluteParseConditions, // onTick
+		() => this.evaluateParseConditions(), // onTick - use arrow function to preserve 'this' context
 		null, // onComplete
 		true, // start
 		'America/Chicago' // timeZone
 	);
 
-	private evaluteParseConditions():void {
+	private evaluateParseConditions(): void {
 		// check dir watcher
 		console.log("checking for changes");
 		if (this.episodeWatcher.changesSinceXmlGen) {
