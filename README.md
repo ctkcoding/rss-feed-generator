@@ -12,6 +12,8 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 
 ✅ parsing service (abstract interface)
 
+✅ move js to class paradigm
+
 ### parsing services
 ✅ review a local dir and parse. serve local files
 - hit url with dir and parse. link to url's files
