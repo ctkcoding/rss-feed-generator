@@ -17,6 +17,7 @@ export class DirectoryWatcher {
     public watcher = this.buildWatcher();
 
     private buildWatcher() {
+        // todo - will need to test watcher at some point
         if (process.env.NODE_ENV !== 'test') {
             return fs.watch(episodesPath, (eventType, filename) => {
                 console.log("file: " + filename + ", event: " + eventType);
