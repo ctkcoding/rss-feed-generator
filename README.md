@@ -17,14 +17,14 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 ### parsing services
 ✅ review a local dir and parse. serve local files
 
-- hit url with dir and parse. link to url's files
+➡️ hit url with dir and parse. link to url's files
 
 ## mvp plus
 🚨 add tests in pipeline for all features (next)
 
-- review + add metadata for apple podcasts (ep photo, link to show, etc)
-
 - containerize it
+
+- review + add metadata for apple podcasts (ep photo, link to show, etc)
 
 - how do I serve mp3s/photos? does container handle?
 
@@ -34,6 +34,5 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 - log missing metadata
 
 
-
 ## acknowledgements
-shoutout to @JustinLaoshi for bailign me out on when I hit js jank that I'm not familiar with
+shoutout to @JustinLaoshi for bailing me out when I hit js jank that I'm not familiar with

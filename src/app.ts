@@ -10,7 +10,7 @@ app.use(express.json());
 
 // let fileWriter: FileWriter = new FileWriter;
 
-let scheduler:Scheduler = new Scheduler;
+export const scheduler:Scheduler = new Scheduler;
 
 // Routes
 app.use('/api/health', healthRoutes);

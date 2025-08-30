@@ -18,13 +18,9 @@ export class Scheduler {
     }
 
 	
-	public episodeParseCron = new CronJob(
-		'*/15 * * * * *', // cronTime
-		() => this.evaluateParseConditions(), // onTick - use arrow function to preserve 'this' context
-		null, // onComplete
-		true, // start
-		'America/Chicago' // timeZone
-	);
+
+	
+	public episodeParseCron = this.generateCronJob();
 
 	private evaluateParseConditions(): void {
 		// check dir watcher
@@ -33,6 +29,20 @@ export class Scheduler {
 			parseAndWriteXml();
 			this.episodeWatcher.changesSinceXmlGen = false;
 		}
+	}
+
+	private generateCronJob() {
+		if (process.env.NODE_ENV !== 'test') {
+			return new CronJob(
+				'*/15 * * * * *', // cronTime
+				() => this.evaluateParseConditions(), // onTick - use arrow function to preserve 'this' context
+				() => {
+					console.log('Cron job running in non-test environment');
+				  }, // onComplete
+				true, // start
+				'America/Chicago' // timeZone
+			);
+		}  
 	}
 }
 

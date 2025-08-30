@@ -14,9 +14,15 @@ export class DirectoryWatcher {
         this.changesSinceXmlGen = false;
     }
 
-    public watcher = fs.watch(episodesPath, (eventType, filename) => {
-        console.log("file: " + filename + ", event: " + eventType);
-        this.changesSinceXmlGen = true;
-        })
+    public watcher = this.buildWatcher();
+
+    private buildWatcher() {
+        if (process.env.NODE_ENV !== 'test') {
+            return fs.watch(episodesPath, (eventType, filename) => {
+                console.log("file: " + filename + ", event: " + eventType);
+                this.changesSinceXmlGen = true;
+                })
+            }
+    }
 }
 
