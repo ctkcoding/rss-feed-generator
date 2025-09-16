@@ -1,14 +1,17 @@
 // endpoint to kick off a parse/write job
 import { Request, Response, NextFunction } from 'express';
 
-import { FileSystemParser } from '../services/parser/filesystemParser';
-import { XmlGenerator } from '../services/rssXmlGenerator';
+import { FileSystemParser } from '../services/parse/filesystemParser';
+import { RssBuilder } from '../services/rssBuilder';
 import { FileWriter } from '../services/fileWriter';
+import { episodesPath } from '../utils/consts';
 
 
 let filesystemParser: FileSystemParser = new FileSystemParser;
 let fileWriter: FileWriter = new FileWriter;
-let xmlGenerator: XmlGenerator = new XmlGenerator;
+let xmlGenerator: RssBuilder = new RssBuilder;
+import { rssFilePath } from '../utils/consts';
+
 
 export const parseLocal = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -20,9 +23,10 @@ export const parseLocal = async (req: Request, res: Response, next: NextFunction
     }
   };
 
+  // todo - extract into a service. or parser
   export const parseAndWriteXml = async () => {
-    const show = await filesystemParser.parse();
-    fileWriter.writeFile(xmlGenerator.generateRssXml(show));
+    const show = await filesystemParser.parse(episodesPath);
+    fileWriter.writeFile(rssFilePath, xmlGenerator.generateRss(show));
   }
 
 

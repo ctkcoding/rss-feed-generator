@@ -1,5 +1,5 @@
 {
     "title": "Time Crisis",
     "description": "This show rules",
-    "link": "https://timecrisis.apple.com/rss"
+    "link": "https://timecrisis.apple.com"
 }

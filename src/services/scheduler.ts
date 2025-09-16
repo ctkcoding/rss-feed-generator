@@ -11,13 +11,13 @@ import { DirectoryWatcher } from './directoryWatcher';
 
 export class Scheduler {
 	episodeWatcher:DirectoryWatcher;
+	count: number;
 
 	constructor() {
-        this.episodeWatcher = new DirectoryWatcher;
+        this.episodeWatcher = new DirectoryWatcher();
+		this.count = 0;
 		// console.log("checking bool: ", this.episodeWatcher.changesSinceXmlGen);
     }
-
-	
 
 	
 	public episodeParseCron = this.generateCronJob();
@@ -25,9 +25,13 @@ export class Scheduler {
 	private evaluateParseConditions(): void {
 		// check dir watcher
 		console.log("checking for changes");
-		if (this.episodeWatcher.changesSinceXmlGen) {
-			parseAndWriteXml();
-			this.episodeWatcher.changesSinceXmlGen = false;
+
+		// run on startup
+		if (this.count === 0 ||
+			this.episodeWatcher.changesSinceXmlGenerated) {
+				parseAndWriteXml();
+				this.episodeWatcher.changesSinceXmlGenerated = false;	
+				this.count++;
 		}
 	}
 
