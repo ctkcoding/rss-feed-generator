@@ -1,6 +1,5 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { episodesPath } from '../utils/consts';
 import config from '../config/config';
 
 
@@ -16,7 +15,7 @@ export class DirectoryWatcher {
 
     constructor() {
         this.changesSinceXmlGenerated = false;
-        this.directoryPath = episodesPath;
+        this.directoryPath = path.join(config.pathRoot, config.episodesDir);
         console.log("watching: " + this.directoryPath);
         this.watcher = this.buildWatcher();
     }

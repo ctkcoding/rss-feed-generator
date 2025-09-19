@@ -1,10 +1,12 @@
 import * as path from 'path';
 
+import config from '../../src/config/config';
+import { testTextFileName, testResourcesPath } from '../testConsts';
 import { Scheduler } from '../../src/services/scheduler';
 
 // inject the fake rss feed somehow
 
-const filePath = path.join(__dirname, '..', "/assets/", "test.txt"); 
+const filePath = path.join(config.pathRoot, testResourcesPath, testTextFileName); 
 
 
 describe('scheduler', () => {

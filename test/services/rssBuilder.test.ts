@@ -1,14 +1,6 @@
-import * as path from 'path';
-import * as fs from 'fs';
-
 import { RssBuilder } from '../../src/services/rssBuilder';
 import { Show } from '../../src/models/show';
 import { Episode } from '../../src/models/episode';
-
-// inject the fake rss feed somehow
-
-const filePath = path.join(__dirname, '..', "/assets/", "test.txt"); 
-
 
 describe('rssBuilder', () => {
     test("builds RSS as expected", () => {

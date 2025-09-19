@@ -1,16 +1,8 @@
-import * as path from 'path';
-import config from '../config/config';
+export const artworkDirDefault: string = "/artwork"
+export const episodesDirDefault: string = "/episodes"
 
-export const rssFileName = "rss.xml";
-// xml write path
-export const rssFilePath = path.join(__dirname, '..', '..', rssFileName); 
+export const rssFileNameDefault: string  = "rss.xml";
+export const showFileNameDefault: string = "show.txt";
 
-// episodes root
-export const episodesPath = path.join(__dirname, '..', '..', config.episodesDir); 
-
-console.log("const for eps: " + episodesPath);
-
-
-// test consts
-// todo - move these to /test when I build that
-export const testXmlData = "this is xml";
+export const episodeFileFormat: string = ".mp3";
+export const artworkFileFormat: string = ".jpeg";

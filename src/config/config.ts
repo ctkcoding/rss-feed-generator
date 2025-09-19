@@ -1,21 +1,42 @@
 import dotenv from 'dotenv';
+import * as path from 'path';
+
+import { rssFileNameDefault, episodesDirDefault, artworkDirDefault, showFileNameDefault } from '../utils/consts';
+
 
 dotenv.config();
 
 interface Config {
   port: number;
   nodeEnv: string;
+  disableWatch: boolean;
+
+  pathRoot: string;
   episodesDir: string;
   artworkDir: string;
-  disableWatch: boolean;
+  showFileName: string;
+  rssFileName: string;
+
+  // rssFilePath: string;
+  // episodesPath: string;
+  // artworkPath: string;
 }
 
 const config: Config = {
   port: Number(process.env.PORT) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  episodesDir: process.env.EPISODES_DIR || '/episodes/',
-  artworkDir: process.env.ARTWORK_DIR || '/artwork/',
   disableWatch: process.env.NODE_ENV === 'test',
+
+  pathRoot: process.env.PATH_ROOT || path.join(__dirname, '..', '..'),
+  episodesDir: process.env.EPISODES_DIR || episodesDirDefault,
+  artworkDir: process.env.ARTWORK_DIR || artworkDirDefault,
+  showFileName: process.env.SHOW_FILENAME || showFileNameDefault,
+  rssFileName: process.env.RSS_FILENAME || rssFileNameDefault
+
+  // todo - move these out to files that they're used in
+  // rssFilePath: path.join(__dirname, '..', '..', rssFileName),
+  // episodesPath: path.join(__dirname, '..', '..', episodesDir!),
+  // artworkPath: path.join(__dirname, '..', '..', artworkDir)
 };
 
 export default config;

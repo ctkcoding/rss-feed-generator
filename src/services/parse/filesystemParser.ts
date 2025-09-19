@@ -7,6 +7,7 @@ import { Show } from "../../models/show";
 import { Parser } from "./parser";
 import { Episode } from '../../models/episode';
 import config from '../../config/config';
+import { artworkFileFormat, episodeFileFormat } from '../../utils/consts';
 
 
 // implementation of parser for local dir
@@ -14,6 +15,7 @@ import config from '../../config/config';
 // future upgrades
 // only update for new files/metadata. keep a diff or hash?
 
+// todo - MOVE THIS TO README
 // dir structure:
 // - episodes               contains episode files
 //  L episode1.mp3          actual episode contents
@@ -23,26 +25,27 @@ import config from '../../config/config';
 
 export class FileSystemParser implements Parser
 {
-    public async parse(episodesSource: string): Promise<Show> {
+    public async parse(episodesSourceDir: string): Promise<Show> {
         // todo - save a log of episodes or metadata missing or without match
         // list of string pairs. episode -> string list holding fields
         // append to string
 
-        // todo - make configurable?
-        const artworkPath = path.join(episodesSource, '..', config.artworkDir);
+        const artworkPath = path.join(episodesSourceDir, '..', config.artworkDir);
 
-        let show: Show = this.parseShow(episodesSource, 'show.txt');
+        let show: Show = this.parseShow(episodesSourceDir, config.showFileName);
 
-        const fileNames = fs.readdirSync(episodesSource);
+        const fileNames = fs.readdirSync(episodesSourceDir);
 
         // Build an array of parse promises (only .mp3 files)
         const parsePromises = fileNames
-            .filter((fileName) => fileName.endsWith('.mp3'))
+            .filter((fileName) => fileName.endsWith(episodeFileFormat))
             .map(async (fileName) => {
-                const filePath = path.join(episodesSource, fileName);
+                const filePath = path.join(episodesSourceDir, fileName);
                 const episode = await this.parseEpisode(filePath);
                 // artwork after we know the title
                 // todo - split into a parallel loop as n ->
+
+                // todo - allow disabling generating artwork
                 this.extractEpisodeArtwork(filePath, artworkPath + episode.title);
                 return episode;
             });
@@ -92,22 +95,23 @@ export class FileSystemParser implements Parser
     };
 
     extractEpisodeArtwork(episodePath: string, artPath: string) {
-        // todo - test when no art exists
+        // todo - check if art exists before generating?
+        // todo - TTL on art age?
         ffmetadata.read(episodePath, this.generateCoverPath(artPath), function(err:any , data:any ) {
             // console.log("pulled image: ", data);
         });
     }
 
     generateCoverPath(artPath: string): any {
-        let path = artPath + '.jpeg';
+        let path = artPath + artworkFileFormat;
         console.log("artPath: ", path)
         return {
             coverPath: path
         };
     }
 
-    parseShow(episodesPath: string, filename: string): Show {
-        const filePath = path.join(episodesPath, filename);
+    parseShow(episodesPath: string, showFileName: string): Show {
+        const filePath = path.join(episodesPath, showFileName);
 
         const showJson = fs.readFileSync(filePath, 'utf8');
         let show: Show = JSON.parse(showJson);
