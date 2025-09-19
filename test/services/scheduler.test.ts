@@ -10,7 +10,7 @@ const filePath = path.join(config.pathRoot, testResourcesPath, testTextFileName)
 
 
 describe('scheduler', () => {
-    test("runs schedule as expected", () => {
+    test("runs schedule on startup as expected", () => {
         // initialize objects
         let scheduler: Scheduler = new Scheduler();
 
@@ -18,7 +18,8 @@ describe('scheduler', () => {
         // todo - DONT use real watcher!!
 
         // run test function
-        // todo - increment something
+        // todo - test that it runs on startup
+
         // if (this.count === 0 ||
 		// 	this.episodeWatcher.changesSinceXmlGenerated) {
 
@@ -27,3 +28,11 @@ describe('scheduler', () => {
         // MOCK on writing XML
     })
 })
+
+// todo - runs when changes happen
+// todo - increment the counter
+// todo - and set changes boolean TRUE
+        // if (this.count === 0 ||
+		// 	this.episodeWatcher.changesSinceXmlGenerated) {
+
+// re use same mock logic from above
