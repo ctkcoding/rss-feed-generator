@@ -30,7 +30,7 @@ export class FileSystemParser implements Parser
         // list of string pairs. episode -> string list holding fields
         // append to string
 
-        const artworkPath = path.join(episodesSourceDir, '..', config.artworkDir);
+        const artworkPath = path.join(episodesSourceDir, '..', config.artworkDir);        
 
         let show: Show = this.parseShow(episodesSourceDir, config.showFileName);
 
@@ -46,7 +46,7 @@ export class FileSystemParser implements Parser
                 // todo - split into a parallel loop as n ->
 
                 // todo - allow disabling generating artwork
-                this.extractEpisodeArtwork(filePath, artworkPath + episode.title);
+                this.extractEpisodeArtwork(filePath, path.join(artworkPath, episode.title));
                 return episode;
             });
         // wait for all episodes to finish parsing
@@ -84,6 +84,8 @@ export class FileSystemParser implements Parser
                 episode.description = data.TDES;
                 // write data as episode
                 episode.date = lastModifiedDate;
+
+                // todo - set from file name or metadata
                 episode.title = data.title;
 
                 // todo - link url generated
@@ -103,10 +105,10 @@ export class FileSystemParser implements Parser
     }
 
     generateCoverPath(artPath: string): any {
-        let path = artPath + artworkFileFormat;
-        console.log("artPath: ", path)
+        let coverPathValue: string = artPath + artworkFileFormat;
+        console.log("coverPathValue: " +  coverPathValue);
         return {
-            coverPath: path
+            coverPath: coverPathValue
         };
     }
 

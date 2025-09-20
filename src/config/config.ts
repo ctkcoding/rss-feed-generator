@@ -16,10 +16,6 @@ interface Config {
   artworkDir: string;
   showFileName: string;
   rssFileName: string;
-
-  // rssFilePath: string;
-  // episodesPath: string;
-  // artworkPath: string;
 }
 
 const config: Config = {
@@ -32,11 +28,6 @@ const config: Config = {
   artworkDir: process.env.ARTWORK_DIR || artworkDirDefault,
   showFileName: process.env.SHOW_FILENAME || showFileNameDefault,
   rssFileName: process.env.RSS_FILENAME || rssFileNameDefault
-
-  // todo - move these out to files that they're used in
-  // rssFilePath: path.join(__dirname, '..', '..', rssFileName),
-  // episodesPath: path.join(__dirname, '..', '..', episodesDir!),
-  // artworkPath: path.join(__dirname, '..', '..', artworkDir)
 };
 
 export default config;

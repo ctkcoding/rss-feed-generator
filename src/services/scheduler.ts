@@ -18,7 +18,6 @@ export class Scheduler {
 		this.count = 0;
 		// console.log("checking bool: ", this.episodeWatcher.changesSinceXmlGen);
     }
-
 	
 	public episodeParseCron = this.generateCronJob();
 
@@ -49,6 +48,3 @@ export class Scheduler {
 		}  
 	}
 }
-
-
-
