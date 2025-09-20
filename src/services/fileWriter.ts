@@ -9,7 +9,7 @@ export class FileWriter {
     public writeFile(path: string, data: string) {
         // todo - directories saved in constants file
         fs.writeFile(path, data, () => {
-            console.log("RSS written successfully!");
+            // console.log("RSS written successfully!");
         })
     }
 }

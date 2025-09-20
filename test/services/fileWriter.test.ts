@@ -10,7 +10,7 @@ const filePath = path.join(config.pathRoot, testResourcesPath, testTextFileName)
 
 
 describe('fileWriter', () => {
-    test("writes data to file", () => {
+    test("writes data to file", async () => {
 
         let fileWriter: FileWriter = new FileWriter();
         fileWriter.writeFile(filePath, testData)

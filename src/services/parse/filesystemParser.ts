@@ -31,10 +31,9 @@ export class FileSystemParser implements Parser
         // append to string
 
         const artworkPath = path.join(episodesSourceDir, '..', config.artworkDir);        
-
+        const fileNames = fs.readdirSync(episodesSourceDir);
         let show: Show = this.parseShow(episodesSourceDir, config.showFileName);
 
-        const fileNames = fs.readdirSync(episodesSourceDir);
 
         // Build an array of parse promises (only .mp3 files)
         const parsePromises = fileNames
@@ -46,7 +45,7 @@ export class FileSystemParser implements Parser
                 // todo - split into a parallel loop as n ->
 
                 // todo - allow disabling generating artwork
-                this.extractEpisodeArtwork(filePath, path.join(artworkPath, episode.title));
+                await this.extractEpisodeArtwork(filePath, path.join(artworkPath, episode.title));
                 return episode;
             });
         // wait for all episodes to finish parsing
@@ -61,14 +60,14 @@ export class FileSystemParser implements Parser
     }
 
     parseEpisode(filePath: string): Promise<Episode> {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             let episode: Episode = new Episode();
 
             // read their metadata
             const stats = fs.statSync(filePath);
             const lastModifiedDate: Date = stats.mtime;
 
-            ffmetadata.read(filePath, (err: any, data: any) => {
+            await ffmetadata.read(filePath, (err: any, data: any) => {
                 /*
                     data solo:  {
                     title: '001 Episode 1',
@@ -96,10 +95,10 @@ export class FileSystemParser implements Parser
         });
     };
 
-    extractEpisodeArtwork(episodePath: string, artPath: string) {
+    async extractEpisodeArtwork(episodePath: string, artPath: string) {
         // todo - check if art exists before generating?
         // todo - TTL on art age?
-        ffmetadata.read(episodePath, this.generateCoverPath(artPath), function(err:any , data:any ) {
+        await ffmetadata.read(episodePath, this.generateCoverPath(artPath), function(err:any , data:any ) {
             // console.log("pulled image: ", data);
         });
     }

@@ -26,7 +26,7 @@ export const parseLocal = async (req: Request, res: Response, next: NextFunction
     }
   };
 
-  // todo - extract into a service. or parser
+  // todo - extract into a service. or parser?
   export const parseAndWriteXml = async () => {
     const show = await filesystemParser.parse(episodesLocation);
     fileWriter.writeFile(rssFileLocation, xmlGenerator.generateRss(show));
