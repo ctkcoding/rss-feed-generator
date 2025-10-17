@@ -8,7 +8,7 @@ import config from '../config/config';
 // todo - mvp+ store show/ep json + cross ref before updating rss
 
 export class DirectoryWatcher {
-    public changesSinceXmlGenerated:boolean;
+    public changesSinceXmlGenerated:boolean = false;
     // todo - pass in or set in config?
     directoryPath: string;
     public watcher;

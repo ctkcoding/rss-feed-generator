@@ -18,20 +18,21 @@ describe('filesystemParser', () => {
         // todo - create sample mp3 w tags
         // todo - pass in sample directory
         // todo - 
-        let rss = await parser.parse(episodesPath);
+        let rss = await parser.parse(episodesPath).then(
+            (data) => {
 
-        // console.log("generated rss");
-        console.log(rss);
+        // todo - clean up magic strings
+        expect(data.title).toBe("Time Crisis");
+        expect(data.description).toBe("This show rules")
+        expect(data.link).toBe("https://timecrisis.apple.com")
+        expect(data.episodes[0].title).toBe("Test title");
+        expect(data.episodes[0].description).toBe("This is the description");
+        expect(data.episodes[0].date).toStrictEqual(fs.statSync(mp3Path).mtime);
+        expect(data.episodes[0].author).toBe("author");
 
-        // // todo - clean up magic strings
-        // expect(rss.title).toBe("Time Crisis");
-        // expect(rss.description).toBe("This show rules")
-        // expect(rss.link).toBe("https://timecrisis.apple.com")
-        // expect(rss.episodes[0].title).toBe("Test title");
-        // expect(rss.episodes[0].description).toBe("This is the description");
-        // expect(rss.episodes[0].date).toStrictEqual(fs.statSync(mp3Path).mtime);
-        // expect(rss.episodes[0].author).toBe("author");
+        expect(fs.access(artworkPath, () => {}));
+    });
 
-        // expect(fs.access(artworkPath, () => {}));
+
     })
 })
