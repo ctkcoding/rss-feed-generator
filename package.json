@@ -4,7 +4,9 @@
   "description": "generate an rss feed from local or remote sources and feed a generated xml document to podcast players",
   "main": "dist/app.js",
   "scripts": {
-    "start": "tsc && node dist/server.js",
+    "start": "node dist/server.js",
+    "start-dev": "tsc && node dist/server.js",
+    "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "jest "
   },
@@ -13,24 +15,25 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@types/express": "^4.17.1",
-    "@types/jest": "^30.0.0",
-    "@types/rss": "^0.0.32",
     "eslint": "^9.32.0",
     "globals": "^16.3.0",
     "jest": "^30.0.5",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
-    "typescript": "5.8.3",
     "typescript-eslint": "^8.38.0"
   },
   "dependencies": {
+    "@types/express": "^4.17.1",
+    "@types/jest": "^30.0.0",
+    "@types/rss": "^0.0.32",
     "cron": "^4.3.3",
     "dotenv": "^17.2.1",
     "express": "^4.17.1",
     "ffmetadata": "^1.7.0",
     "music-metadata": "^11.8.3",
     "path": "^0.12.7",
-    "rss": "^1.2.2"
+    "rss": "^1.2.2",
+    "sanitize-filename-ts": "^1.0.2",
+    "typescript": "5.8.3"
   }
 }

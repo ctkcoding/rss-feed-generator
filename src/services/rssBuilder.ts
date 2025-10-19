@@ -17,17 +17,17 @@ export class RssBuilder {
         const feed = new RSS({
             title: show.title,
             description: show.description,
-            feed_url: show.link,
+            feed_url: show.link + "/api/feed/rss",
             site_url: show.site,
             // todo - itunes image
-            image_url: show.image,
+            image_url: show.link + "/episodes/" + encodeURIComponent(show.image),
             language: show.language,
             ttl: show.ttl,
             custom_namespaces: {
                 'itunes': 'http://www.itunes.com/dtds/podcast-1.0.dtd'
               },
             custom_elements: [
-                {"itunes:image": show.image}
+                {"itunes:image": show.link + "/episodes/" + encodeURIComponent(show.image)}
             ]
 
         });

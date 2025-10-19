@@ -3,8 +3,8 @@
     "description": "This show rules",
 
     "site": "https://timecrisis.apple.com",
-    "link": "https://timecrisis.apple.com/rss",
-    "image": "https://timecrisis.apple.com/cover.jpg",
+    "link": "http://localhost:3000",
+    "image": "cover.jpg",
     "language": "en-us",
     "ttl": 60
 }

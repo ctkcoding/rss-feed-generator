@@ -17,7 +17,7 @@ export class Episode {
     // duration etc
     
 
-    constructor(title: string, description: string, url: string, image: string, pubdate: Date, enclosure: string) {
+    constructor(title: string, description: string, url: string, pubdate: Date, image: string, enclosure: string) {
         this.title = title;
         this.description = description;
         this.url = url;

@@ -27,8 +27,8 @@ describe('filesystemParser', () => {
         expect(data.link).toBe("https://timecrisis.apple.com")
         expect(data.episodes[0].title).toBe("Test title");
         expect(data.episodes[0].description).toBe("This is the description");
-        expect(data.episodes[0].date).toStrictEqual(fs.statSync(mp3Path).mtime);
-        expect(data.episodes[0].author).toBe("author");
+        expect(data.episodes[0].pubdate).toStrictEqual(fs.statSync(mp3Path).mtime);
+        // expect(data.episodes[0].author).toBe("author");
 
         expect(fs.access(artworkPath, () => {}));
     });

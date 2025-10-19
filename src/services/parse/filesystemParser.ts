@@ -1,6 +1,5 @@
 import * as path from 'path';
 import * as fs from 'fs';
-// const mm = import('music-metadata');
 var ffmetadata = require("ffmetadata");
 
 import { Show } from "../../models/show";
@@ -40,12 +39,12 @@ export class FileSystemParser implements Parser
             .filter((fileName) => fileName.endsWith(episodeFileFormat))
             .map(async (fileName) => {
                 const filePath = path.join(episodesSourceDir, fileName);
-                const episode = await this.parseEpisode(filePath);
+                const episode = await this.parseEpisode(filePath, show.link, fileName);
                 // artwork after we know the title
                 // todo - split into a parallel loop as n ->
 
                 // todo - allow disabling generating artwork
-                await this.extractEpisodeArtwork(filePath, path.join(artworkPath, episode.title));
+                await this.extractEpisodeArtwork(filePath, path.join(artworkPath, fileName.replace(episodeFileFormat,"")));
                 return episode;
             });
         // wait for all episodes to finish parsing
@@ -59,7 +58,7 @@ export class FileSystemParser implements Parser
         return show;
     }
 
-    parseEpisode(filePath: string): Promise<Episode> {
+    parseEpisode(filePath: string, feedUrl: string, fileName: string): Promise<Episode> {
         return new Promise(async (resolve) => {
             // let episode: Episode = new Episode();
 
@@ -68,35 +67,20 @@ export class FileSystemParser implements Parser
             const lastModifiedDate: Date = stats.mtime;
 
             await ffmetadata.read(filePath, (err: any, data: any) => {
-                /*
-                    data solo:  {
-                    title: '001 Episode 1',
-                    track: '1',
-                    album: 'Time Crisis Season 1',
-                    TIT3: 'Ezra kicks off his first episode with a full house.',
-                    TGID: 'Time Crisis',
-                    TDES: 'Ezra kicks off his first episode with a full house.',
-                    date: '2015',
-                    encoder: 'Lavf61.7.100'
-                    }
-                */
+    
+                console.log("filePath: " + filePath);
+                console.log("data: " + data);
 
-                /*
-                    title: string;
-                    description: string;
-                    url: string;
-                    pubdate: Date;
-                    image: string;
-                    enclosure: EnclosureObject;
-                */
-            
+                // title: string, description: string, url: string, pubdate: Date, image: string, enclosure: string
                 let episode: Episode = new Episode(
                     data.title,
                     data.TDES,
-                    "show.url PLUS FILEPATH pending parse: " + filePath,
-                    "parse out image url like show url",
+                    feedUrl + "/episodes/" + encodeURIComponent(fileName),
+                    // "show.url PLUS FILEPATH pending parse: " + filePath,
                     lastModifiedDate,
-                    "show.url PLUS FILEPATH pending parse: " + filePath,
+                    feedUrl + "/artwork/" + encodeURIComponent(fileName.replace(episodeFileFormat,artworkFileFormat)),
+                    // "parse out image url like show url",
+                    feedUrl + "/episodes/" + encodeURIComponent(fileName),
                 );
 
                 // episode.description = data.TDES;
@@ -108,7 +92,6 @@ export class FileSystemParser implements Parser
 
                 // todo - link url generated
 
-                console.log("ep data: ", episode);
                 resolve(episode);
             });
         });
