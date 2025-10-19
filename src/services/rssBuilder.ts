@@ -14,26 +14,37 @@ export class RssBuilder {
 
     public generateRss(show: Show) {
 
-        // todo - should I create just one builder and re use?
         const feed = new RSS({
             title: show.title,
             description: show.description,
             feed_url: show.link,
-            // todo - site url vs feed url?
-            site_url: 'https://music.apple.com/us/curator/time-crisis/993269786',
-            // Optional: language, image_url, etc.
+            site_url: show.site,
+            // todo - itunes image
+            image_url: show.image,
+            language: show.language,
+            ttl: show.ttl,
+            custom_namespaces: {
+                'itunes': 'http://www.itunes.com/dtds/podcast-1.0.dtd'
+              },
+            custom_elements: [
+                {"itunes:image": show.image}
+            ]
 
-            // todo - include author?
         });
     
         show.episodes.forEach(episode => {
             feed.item({
                 title: episode.title,
                 description: episode.description,
+                
+                // todo - custom elements
+                custom_elements: [
+                    {"itunes:image": episode.image},
+                ],
+                // itunes:duration
                 url: episode.url,
-                date: episode.date,
-                author: episode.author,
-                // update episodes using show details? ie for author
+                date: episode.pubdate,
+                enclosure: episode.enclosure,                
             });
         });
     

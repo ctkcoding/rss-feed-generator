@@ -9,19 +9,26 @@ import { Episode } from "./episode";
 
 export class Show {
     title: string;
-    link: string;
     // todo - feed vs site links??
     description: string;
+    
+    site: string;
+    link: string;
+    image: string;
+    language: string;
+    ttl: number;
     episodes: Episode[];
 
-    constructor(title: string, link: string, description: string, episodes: Episode[]) {
+    constructor(title: string, description: string, site: string, link: string, image: string, language: string, ttl: number, episodes: Episode[]) {
         this.title = title;
-        this.link = link;
         this.description = description;
+
+        this.site = site;
+        this.link = link;
+        this.image = image;
+        this.language = language;
+        this.ttl = ttl;
+
         this.episodes = episodes;
       }
-
-      // "toRss" calls xml service
   }
-
-  

@@ -1,5 +1,10 @@
 {
     "title": "Time Crisis",
     "description": "This show rules",
-    "link": "https://timecrisis.apple.com"
+
+    "site": "https://timecrisis.apple.com",
+    "link": "https://timecrisis.apple.com/rss",
+    "image": "https://timecrisis.apple.com/cover.jpg",
+    "language": "en-us",
+    "ttl": 60
 }

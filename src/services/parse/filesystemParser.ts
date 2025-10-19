@@ -61,7 +61,7 @@ export class FileSystemParser implements Parser
 
     parseEpisode(filePath: string): Promise<Episode> {
         return new Promise(async (resolve) => {
-            let episode: Episode = new Episode();
+            // let episode: Episode = new Episode();
 
             // read their metadata
             const stats = fs.statSync(filePath);
@@ -80,12 +80,31 @@ export class FileSystemParser implements Parser
                     encoder: 'Lavf61.7.100'
                     }
                 */
-                episode.description = data.TDES;
+
+                /*
+                    title: string;
+                    description: string;
+                    url: string;
+                    pubdate: Date;
+                    image: string;
+                    enclosure: EnclosureObject;
+                */
+            
+                let episode: Episode = new Episode(
+                    data.title,
+                    data.TDES,
+                    "show.url PLUS FILEPATH pending parse: " + filePath,
+                    "parse out image url like show url",
+                    lastModifiedDate,
+                    "show.url PLUS FILEPATH pending parse: " + filePath,
+                );
+
+                // episode.description = data.TDES;
                 // write data as episode
-                episode.date = lastModifiedDate;
+                // episode.date = lastModifiedDate;
 
                 // todo - set from file name or metadata
-                episode.title = data.title;
+                // episode.title = data.title;
 
                 // todo - link url generated
 
