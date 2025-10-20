@@ -22,9 +22,9 @@ generate an rss feed from local or remote sources and feed a generated xml docum
 
 ✅ review + add metadata for apple podcasts (ep photo, link to show, etc)
 
-🚨 containerize it
+✅ containerize it
 
-- how do I serve mp3s/photos? does container handle?
+✅ how do I serve mp3s/photos? does container handle?
 
 ## future improvements
 - config for required metadata
