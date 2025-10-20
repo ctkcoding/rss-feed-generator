@@ -7,6 +7,7 @@ import { Parser } from "./parser";
 import { Episode } from '../../models/episode';
 import config from '../../config/config';
 import { artworkFileFormat, episodeFileFormat } from '../../utils/consts';
+import { sanitize } from 'sanitize-filename-ts';
 
 
 // implementation of parser for local dir
@@ -73,7 +74,7 @@ export class FileSystemParser implements Parser
 
                 // title: string, description: string, url: string, pubdate: Date, image: string, enclosure: string
                 let episode: Episode = new Episode(
-                    data.title,
+                    sanitize(data.title),
                     data.TDES,
                     feedUrl + "/episodes/" + encodeURIComponent(fileName),
                     // "show.url PLUS FILEPATH pending parse: " + filePath,
