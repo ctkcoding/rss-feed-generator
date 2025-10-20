@@ -39,7 +39,12 @@ export class RssBuilder {
                 
                 // todo - custom elements
                 custom_elements: [
-                    {"itunes:image": episode.image},
+                    {"itunes:image": {
+                        _attr: {
+                            href: episode.image
+                        }
+                    }
+                },
                 ],
                 // itunes:duration
                 url: episode.url,
