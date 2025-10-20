@@ -15,9 +15,9 @@ app.use(express.json());
 export const scheduler:Scheduler = new Scheduler;
 
 // Routes
-app.use('/api/health', healthRoutes);
+app.use('/health', healthRoutes);
 // app.use('/api/parse', parseRoutes);
-app.use('/api/feed', feedRoutes);
+app.use('/rss', feedRoutes);
 app.use('/episodes', episodeRoutes);
 app.use('/artwork', artworkRoutes);
 

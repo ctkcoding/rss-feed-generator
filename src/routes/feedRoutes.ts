@@ -3,6 +3,6 @@ import { feed } from '../controllers/feedController';
 
 
 const router = Router();
-router.get('/rss', feed)
+router.get('/', feed)
 
 export default router;
