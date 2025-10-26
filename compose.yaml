@@ -5,7 +5,7 @@ services:
     environment:
       NODE_ENV: production
     volumes:
-      - /episodes:/usr/src/app/episodes
-      - /artwork:/usr/src/app/artwork
+      - /Users/chrisk/code/tools/rss-feed-generator/episodes:/usr/src/app/episodes
+      - /Users/chrisk/code/tools/rss-feed-generator/artwork:/usr/src/app/artwork
     ports:
       - 3000:3000

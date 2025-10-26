@@ -8,6 +8,7 @@ import { Episode } from '../../models/episode';
 import config from '../../config/config';
 import { artworkFileFormat, episodeFileFormat } from '../../utils/consts';
 import { sanitize } from 'sanitize-filename-ts';
+import sharp from 'sharp';
 
 
 // implementation of parser for local dir
@@ -101,16 +102,37 @@ export class FileSystemParser implements Parser
     async extractEpisodeArtwork(episodePath: string, artPath: string) {
         // todo - check if art exists before generating?
         // todo - TTL on art age?
-        await ffmetadata.read(episodePath, this.generateCoverPath(artPath), function(err:any , data:any ) {
-            // console.log("pulled image: ", data);
-        });
+        let artPathOriginal: string = artPath + "_original" + artworkFileFormat;
+        let artPathResized: string = artPath + artworkFileFormat;
+
+        if (this.checkArtworkExists(artPathResized)) { 
+            await ffmetadata.read(episodePath, this.generateCoverPath(artPathOriginal), function(err:any , data:any ) {
+                sharp(artPathOriginal)
+                    .resize({width: 1400, height: 1400})
+                    .toFile(artPathResized);
+                // console.log("pulled image: ", data);
+            });
+        }
     }
 
-    generateCoverPath(artPath: string): any {
-        let coverPathValue: string = artPath + artworkFileFormat;
-        console.log("coverPathValue: " +  coverPathValue);
+    checkArtworkExists(artPathResized: string): boolean {
+        fs.access(artPathResized, fs.constants.R_OK, (err) => {
+            if (err && err!.code === 'ENOENT') {
+                console.log('Artwork not written. Proceed');
+                return false
+            } else if (err) {
+                console.error('An error occurred:', err);
+            } else {
+                console.log('File exists, do not rewrite.')
+            }
+          });
+        return true;
+    }
+
+    generateCoverPath(artPathFull: string): any {
+        // console.log("coverPathValue: " +  coverPathValue);
         return {
-            coverPath: coverPathValue
+            coverPath: artPathFull
         };
     }
 
