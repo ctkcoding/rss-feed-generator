@@ -106,32 +106,28 @@ export class FileSystemParser implements Parser
         let artPathResized: string = artPath + artworkFileFormat;
 
         console.log("Checking for embedded art at " + artPathOriginal);
-        if (!this.checkArtworkExists(artPathOriginal) && !this.checkArtworkExists(artPathResized)) { 
-            await ffmetadata.read(episodePath, this.generateCoverPath(artPathOriginal), function(err:any , data:any ) {
-                // console.log("pulled image: ", data);
-            });
-        }
+        if (!this.checkArtworkExists(artPathOriginal)) { 
+            console.log("extracting mp3 artwork to: " + artPathOriginal);
+            await ffmetadata.read(episodePath, this.generateCoverPath(artPathOriginal), (err:any , data:any ) => {
+                console.log("pulled image: ", data);
 
-        console.log("Check for resized art");
-        if (!this.checkArtworkExists(artPathOriginal)){ 
-                sharp(artPathOriginal)
-                    .resize({width: 1400, height: 1400})
-                    .toFile(artPathResized);
-            }
+                console.log("Checking for resized art");
+                if (!this.checkArtworkExists(artPathResized)){ 
+                        sharp(artPathOriginal)
+                            .resize({width: 1400, height: 1400})
+                            .toFile(artPathResized);
+                    }
+            });
+        } else if (!this.checkArtworkExists(artPathResized)) { 
+            sharp(artPathOriginal)
+                .resize({width: 1400, height: 1400})
+                .toFile(artPathResized);
+        }
     }
 
     checkArtworkExists(artPath: string): boolean {
-        fs.access(artPath, fs.constants.R_OK, (err) => {
-            if (err && err!.code === 'ENOENT') {
-                console.log('Artwork not written. Proceed');
-                return false
-            } else if (err) {
-                console.error('Error while checking if artwork exists:', err);
-            } else {
-                console.log('Artwork file already exists, do not rewrite.')
-            }
-          });
-        return true;
+
+        return fs.existsSync(artPath);
     }
 
     generateCoverPath(artPathFull: string): any {
