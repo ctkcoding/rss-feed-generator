@@ -105,25 +105,30 @@ export class FileSystemParser implements Parser
         let artPathOriginal: string = artPath + "_original" + artworkFileFormat;
         let artPathResized: string = artPath + artworkFileFormat;
 
-        if (this.checkArtworkExists(artPathResized)) { 
+        console.log("Checking for embedded art at " + artPathOriginal);
+        if (!this.checkArtworkExists(artPathOriginal) && !this.checkArtworkExists(artPathResized)) { 
             await ffmetadata.read(episodePath, this.generateCoverPath(artPathOriginal), function(err:any , data:any ) {
-                sharp(artPathOriginal)
-                    .resize({width: 1400, height: 1400})
-                    .toFile(artPathResized);
                 // console.log("pulled image: ", data);
             });
         }
+
+        console.log("Check for resized art");
+        if (!this.checkArtworkExists(artPathOriginal)){ 
+                sharp(artPathOriginal)
+                    .resize({width: 1400, height: 1400})
+                    .toFile(artPathResized);
+            }
     }
 
-    checkArtworkExists(artPathResized: string): boolean {
-        fs.access(artPathResized, fs.constants.R_OK, (err) => {
+    checkArtworkExists(artPath: string): boolean {
+        fs.access(artPath, fs.constants.R_OK, (err) => {
             if (err && err!.code === 'ENOENT') {
                 console.log('Artwork not written. Proceed');
                 return false
             } else if (err) {
-                console.error('An error occurred:', err);
+                console.error('Error while checking if artwork exists:', err);
             } else {
-                console.log('File exists, do not rewrite.')
+                console.log('Artwork file already exists, do not rewrite.')
             }
           });
         return true;
