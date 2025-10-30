@@ -1,6 +1,7 @@
 import * as path from 'path';
-import * as fs from 'fs';
-var ffmetadata = require("ffmetadata");
+import * as fs from 'fs/promises';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ffmetadata = require("ffmetadata");
 
 import { Show } from "../../models/show";
 import { Parser } from "./parser";
@@ -32,9 +33,8 @@ export class FileSystemParser implements Parser
         // append to string
 
         const artworkPath = path.join(episodesSourceDir, '..', config.artworkDir);        
-        const fileNames = fs.readdirSync(episodesSourceDir);
-        let show: Show = this.parseShow(episodesSourceDir, config.showFileName);
-
+        const fileNames = await fs.readdir(episodesSourceDir);
+        const show: Show = await this.parseShow(episodesSourceDir, config.showFileName);
 
         // Build an array of parse promises (only .mp3 files)
         const parsePromises = fileNames
@@ -65,7 +65,7 @@ export class FileSystemParser implements Parser
             // let episode: Episode = new Episode();
 
             // read their metadata
-            const stats = fs.statSync(filePath);
+            const stats = await fs.stat(filePath);
             const lastModifiedDate: Date = stats.mtime;
 
             await ffmetadata.read(filePath, (err: any, data: any) => {
@@ -74,7 +74,7 @@ export class FileSystemParser implements Parser
                 console.log("data: " + data);
 
                 // title: string, description: string, url: string, pubdate: Date, image: string, enclosure: string
-                let episode: Episode = new Episode(
+                const episode: Episode = new Episode(
                     sanitize(data.title),
                     data.TDES,
                     feedUrl + "/episodes/" + encodeURIComponent(fileName),
@@ -102,32 +102,46 @@ export class FileSystemParser implements Parser
     async extractEpisodeArtwork(episodePath: string, artPath: string) {
         // todo - check if art exists before generating?
         // todo - TTL on art age?
-        let artPathOriginal: string = artPath + "_original" + artworkFileFormat;
-        let artPathResized: string = artPath + artworkFileFormat;
+        const artPathOriginal: string = artPath + "_original" + artworkFileFormat;
+        const artPathResized: string = artPath + artworkFileFormat;
 
         console.log("Checking for embedded art at " + artPathOriginal);
-        if (!this.checkArtworkExists(artPathOriginal)) { 
-            console.log("extracting mp3 artwork to: " + artPathOriginal);
-            await ffmetadata.read(episodePath, this.generateCoverPath(artPathOriginal), (err:any , data:any ) => {
-                console.log("pulled image: ", data);
 
-                console.log("Checking for resized art");
-                if (!this.checkArtworkExists(artPathResized)){ 
+        await this.checkArtworkExists(artPathOriginal).then(async (exists) => {
+            if (!exists) {
+                console.log("extracting mp3 artwork to: " + artPathOriginal);
+                await ffmetadata.read(episodePath, this.generateCoverPath(artPathOriginal), async (err:any , data:any ) => {
+                    console.log("pulled image: ", data);
+                    await this.checkArtworkExists(artPathResized).then(async (exists) => {
+                    if (!exists) {
+                    console.log("Checking for resized art");
+                    sharp(artPathOriginal)
+                        .resize({width: 1400, height: 1400})
+                        .toFile(artPathResized);
+                    }
+                    });
+                });
+            } else {
+                await this.checkArtworkExists(artPathResized).then(async (exists) => {
+                        if (!exists) {
+                        console.log("Checking for resized art");
                         sharp(artPathOriginal)
                             .resize({width: 1400, height: 1400})
                             .toFile(artPathResized);
-                    }
-            });
-        } else if (!this.checkArtworkExists(artPathResized)) { 
-            sharp(artPathOriginal)
-                .resize({width: 1400, height: 1400})
-                .toFile(artPathResized);
-        }
+                        }
+                });
+            }
+        })
+        
     }
 
-    checkArtworkExists(artPath: string): boolean {
-
-        return fs.existsSync(artPath);
+    async checkArtworkExists(artPath: string): Promise<boolean> {
+        try {
+            await fs.access(artPath);
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     generateCoverPath(artPathFull: string): any {
@@ -137,11 +151,11 @@ export class FileSystemParser implements Parser
         };
     }
 
-    parseShow(episodesPath: string, showFileName: string): Show {
+    async parseShow(episodesPath: string, showFileName: string): Promise<Show> {
         const filePath = path.join(episodesPath, showFileName);
 
-        const showJson = fs.readFileSync(filePath, 'utf8');
-        let show: Show = JSON.parse(showJson);
+        const showJson = await fs.readFile(filePath, 'utf8');
+        const show: Show = JSON.parse(showJson);
         // show.episodes = episodes;
 
         // parse show.txt for show details

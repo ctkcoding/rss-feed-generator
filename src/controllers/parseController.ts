@@ -8,12 +8,12 @@ import { FileWriter } from '../services/fileWriter';
 import config from '../config/config';
 
 
-let filesystemParser: FileSystemParser = new FileSystemParser;
-let fileWriter: FileWriter = new FileWriter;
-let xmlGenerator: RssBuilder = new RssBuilder;
+const filesystemParser: FileSystemParser = new FileSystemParser;
+const fileWriter: FileWriter = new FileWriter;
+const xmlGenerator: RssBuilder = new RssBuilder;
 
-let episodesLocation: string = path.join(config.pathRoot, config.episodesDir)
-let rssFileLocation: string = path.join(config.pathRoot, config.rssFileName)
+const episodesLocation: string = path.join(config.pathRoot, config.episodesDir)
+const rssFileLocation: string = path.join(config.pathRoot, config.rssFileName)
 
 
 export const parseLocal = async (req: Request, res: Response, next: NextFunction) => {
