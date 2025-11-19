@@ -75,8 +75,8 @@ export class FileSystemParser implements Parser
 
                 // title: string, description: string, url: string, pubdate: Date, image: string, enclosure: string
                 const episode: Episode = new Episode(
-                    sanitize(data.title),
-                    data.TDES,
+                    sanitize(this.fallbackIfNull(data.title, fileName)),
+                    this.fallbackIfNull(data.TDES, ""),
                     feedUrl + "/episodes/" + encodeURIComponent(fileName),
                     // "show.url PLUS FILEPATH pending parse: " + filePath,
                     lastModifiedDate,
@@ -169,4 +169,13 @@ export class FileSystemParser implements Parser
         // create show from txt details
         return show;
     };
+
+    fallbackIfNull(optional: string, fallback: string): string {
+        if (optional == null) {
+            return fallback;
+        } else {
+            return optional;
+        }
+
+    }
 }
