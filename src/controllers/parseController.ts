@@ -6,6 +6,7 @@ import { FileSystemParser } from '../services/parse/filesystemParser';
 import { RssBuilder } from '../services/rssBuilder';
 import { FileWriter } from '../services/fileWriter';
 import config from '../config/config';
+import { configDirDefault } from '../utils/consts';
 
 
 const filesystemParser: FileSystemParser = new FileSystemParser;
@@ -13,7 +14,7 @@ const fileWriter: FileWriter = new FileWriter;
 const xmlGenerator: RssBuilder = new RssBuilder;
 
 const episodesLocation: string = path.join(config.pathRoot, config.episodesDir)
-const rssFileLocation: string = path.join(config.pathRoot, config.rssFileName)
+const rssFileLocation: string = path.join(config.pathRoot, configDirDefault, config.rssFileName)
 
 
 export const parseLocal = async (req: Request, res: Response, next: NextFunction) => {

@@ -1,5 +1,6 @@
 export const artworkDirDefault: string = "/artwork"
 export const episodesDirDefault: string = "/episodes"
+export const configDirDefault: string = "/config"
 
 export const rssFileNameDefault: string  = "rss.xml";
 export const showFileNameDefault: string = "show.txt";

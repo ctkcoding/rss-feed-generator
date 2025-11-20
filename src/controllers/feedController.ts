@@ -2,9 +2,11 @@
 import { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import config from '../config/config';
+import { configDirDefault } from '../utils/consts';
+
 // todo - is there a better way to jump up by 2 parent dirs? prob no
 
-const rssFilePath: string = path.join(config.pathRoot, config.rssFileName)
+const rssFilePath: string = path.join(config.pathRoot, configDirDefault, config.rssFileName)
 
 export const feed = (req: Request, res: Response, next: NextFunction) => {
     try {
