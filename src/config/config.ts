@@ -10,6 +10,7 @@ interface Config {
   port: number;
   nodeEnv: string;
   disableWatch: boolean;
+  extractArtwork: boolean;
 
   pathRoot: string;
   episodesDir: string;
@@ -22,6 +23,7 @@ const config: Config = {
   port: Number(process.env.PORT) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
   disableWatch: process.env.NODE_ENV === 'test',
+  extractArtwork: process.env.EXTRACT_ARTWORK === "true",
 
   pathRoot: process.env.PATH_ROOT || path.join(__dirname, '..', '..'),
   episodesDir: process.env.EPISODES_DIR || episodesDirDefault,

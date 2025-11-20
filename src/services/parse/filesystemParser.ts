@@ -46,12 +46,13 @@ export class FileSystemParser implements Parser
                 // todo - split into a parallel loop as n ->
 
                 // todo - allow disabling generating artwork
-                await this.extractEpisodeArtwork(filePath, path.join(artworkPath, fileName.replace(episodeFileFormat,"")));
+                if (config.extractArtwork) {
+                    await this.extractEpisodeArtwork(filePath, path.join(artworkPath, fileName.replace(episodeFileFormat,"")));
+                }
                 return episode;
             });
         // wait for all episodes to finish parsing
-        show.episodes = await Promise.all(parsePromises);
-
+        show.episodes = await Promise.all(parsePromises); // episodes
 
         // todo - create artwork dir if not exists
         // note - this should be a mounted dir so it always exists
@@ -75,12 +76,12 @@ export class FileSystemParser implements Parser
 
                 // title: string, description: string, url: string, pubdate: Date, image: string, enclosure: string
                 const episode: Episode = new Episode(
-                    sanitize(data.title || fileName),
-                    data.TDES || "",
+                    sanitize(data.title ?? fileName),
+                    data.TDES ?? "",
                     feedUrl + "/episodes/" + encodeURIComponent(fileName),
                     // "show.url PLUS FILEPATH pending parse: " + filePath,
                     lastModifiedDate,
-                    feedUrl + "/artwork/" + encodeURIComponent(fileName.replace(episodeFileFormat,artworkFileFormat)),
+                    config.extractArtwork ? feedUrl + "/artwork/" + encodeURIComponent(fileName.replace(episodeFileFormat,artworkFileFormat)) : '',
                     // "parse out image url like show url",
                     feedUrl + "/episodes/" + encodeURIComponent(fileName),
                 );
