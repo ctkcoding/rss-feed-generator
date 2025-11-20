@@ -75,8 +75,8 @@ export class FileSystemParser implements Parser
 
                 // title: string, description: string, url: string, pubdate: Date, image: string, enclosure: string
                 const episode: Episode = new Episode(
-                    sanitize(this.fallbackIfNull(data.title, fileName)),
-                    this.fallbackIfNull(data.TDES, ""),
+                    sanitize(data.title || fileName),
+                    data.TDES || "",
                     feedUrl + "/episodes/" + encodeURIComponent(fileName),
                     // "show.url PLUS FILEPATH pending parse: " + filePath,
                     lastModifiedDate,
