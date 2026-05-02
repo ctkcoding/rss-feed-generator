@@ -5,3 +5,47 @@ rss.xml
 .env
 /episodes/*.mp3
 /artwork/*
+
+
+### Gradle ###
+.gradle/
+build/
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+
+### IDE Specific ###
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+bin/
+.springBeans
+.sts4-cache
+
+# VS Code
+.vscode/
+
+### Environment / Sensitive ###
+.env
+.env.local
+application-local.properties
+application-local.yml
+
+### OS Specific ###
+.DS_Store
+Thumbs.db
