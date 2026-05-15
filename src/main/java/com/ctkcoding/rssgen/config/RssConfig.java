@@ -19,4 +19,6 @@ public class RssConfig {
 
     Boolean extractArtwork = false;
     Boolean fileWatch = false;
+
+    String language = "us-en";
 }
