@@ -1,5 +1,10 @@
 package com.ctkcoding.rssgen.config;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Component // Makes it a Spring Bean so binding can occur
+@ConfigurationProperties(prefix = "rss")
 public class RssConfig {
     String pathRoot = System.getProperty("user.dir");
     String artworkDir = "artwork";
