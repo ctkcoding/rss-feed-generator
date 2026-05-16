@@ -1,4 +1,4 @@
 package com.ctkcoding.rssgen.controller;
 
-public class FileController {
+public class ParseControllerTest {
 }
