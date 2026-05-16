@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,23 +32,19 @@ public class FileController {
     }
 
     @GetMapping("/episode/{episode}")
-    public ResponseEntity<String> returnEpisode() {
-
+    public ResponseEntity<String> returnEpisode(@PathVariable String episode) {
         // todo - return file if exists
-        // todo - find the file at /episodes/{episode}
-
         // todo - return it as a file instead of string
-        return ResponseEntity.ok("");
+
+        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir() + episode));
     }
 
     @GetMapping("/artwork/{artwork}")
-    public ResponseEntity<String> returnArtwork() {
-
+    public ResponseEntity<String> returnArtwork(@PathVariable String artwork) {
         // todo - return file if exists
-        // todo - find the file at /artwork/{artwork}
-
         // todo - return it as a file instead of string
-        return ResponseEntity.ok("");
+
+        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir() + artwork));
     }
 
 }
