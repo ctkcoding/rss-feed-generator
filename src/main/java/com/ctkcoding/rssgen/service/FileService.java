@@ -25,12 +25,12 @@ public class FileService {
                 .resolve(file);
         logger.info("resolved full file path" + filePath);
 
-        // todo - return the actual file
-        // todo - throw an error if file isn't ready/doesn't exist
-        // todo - reject if the extra path escapes directory
         try {
-            if (Files.exists(filePath, LinkOption.NOFOLLOW_LINKS))
-            return "file exists: " +  filePath;
+            if (Files.exists(filePath, LinkOption.NOFOLLOW_LINKS)) {
+                // todo - return the actual file
+                // todo - reject if the extra path escapes directory
+                return "file exists: " +  filePath;
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
