@@ -31,7 +31,7 @@ public class FileController {
         // todo - find the file at /episodes/{episode}
 
         // todo - return it as a file instead of string
-        return ResponseEntity.ok();
+        return ResponseEntity.ok("");
     }
 
     @GetMapping("/artwork/{artwork}")
@@ -41,7 +41,7 @@ public class FileController {
         // todo - find the file at /artwork/{artwork}
 
         // todo - return it as a file instead of string
-        return ResponseEntity.ok();
+        return ResponseEntity.ok("");
     }
 
 }
