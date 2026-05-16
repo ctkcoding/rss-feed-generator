@@ -3,27 +3,29 @@ package com.ctkcoding.rssgen.config;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
+@TestPropertySource(locations = "classpath:application-test.properties") // or file:/absolute/path/to/test.properties
 class RssConfigTest {
 
     @Autowired
     private RssConfig rssConfig;
 
     @Test
-    void defaults() {
-        assertEquals(System.getProperty("user.dir"), rssConfig.pathRoot);
-        assertEquals("artwork", rssConfig.artworkDir);
-        assertEquals("episodes", rssConfig.episodesDir);
-        assertEquals("info", rssConfig.infoDir);
-        assertEquals("rss.xml", rssConfig.rssFileName);
-        assertEquals("show.json", rssConfig.showFileName);
-        assertEquals(".mp3", rssConfig.episodeFileExtension);
-        assertEquals(".jpeg", rssConfig.artworkFileExtension);
-        assertEquals(false, rssConfig.extractArtwork);
-        assertEquals(false, rssConfig.fileWatch);
-        assertEquals("us-en", rssConfig.language);
+    void propertiesTest() {
+        assertEquals("artwork", rssConfig.getArtworkDir());
+        assertEquals("episodes", rssConfig.getEpisodesDir());
+        assertEquals("info", rssConfig.getInfoDir());
+        assertEquals("rss.xml", rssConfig.getRssFileName());
+        assertEquals("show.json", rssConfig.getShowFileName());
+        assertEquals(".mp3", rssConfig.getEpisodeFileExtension());
+        assertEquals(".jpeg", rssConfig.getArtworkFileExtension());
+        assertEquals(false, rssConfig.getExtractArtwork());
+        assertEquals(false, rssConfig.getFileWatch());
+        assertEquals("en-us", rssConfig.getLanguage());
     }
+
 }

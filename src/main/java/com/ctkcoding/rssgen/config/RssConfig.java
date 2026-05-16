@@ -1,24 +1,26 @@
 package com.ctkcoding.rssgen.config;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Component // Makes it a Spring Bean so binding can occur
 @ConfigurationProperties(prefix = "rss")
+@AllArgsConstructor
+@Getter
 public class RssConfig {
-    String pathRoot = System.getProperty("user.dir");
-    String artworkDir = "artwork";
-    String episodesDir = "episodes";
-    String infoDir = "info";
+    // todo - use pathRoot user.dir in services where it's needed
+    // private String pathRoot = System.getProperty("user.dir");
 
-    // todo - allow override by application.properties
-    String rssFileName = "rss.xml";
-    String showFileName = "show.json";
-    String episodeFileExtension = ".mp3";
-    String artworkFileExtension = ".jpeg";
+    private String artworkDir;
+    private String episodesDir;
+    private String infoDir;
 
-    Boolean extractArtwork = false;
-    Boolean fileWatch = false;
+    private String rssFileName;
+    private String showFileName;
+    private String episodeFileExtension;
+    private String artworkFileExtension;
+    private String language;
 
-    String language = "us-en";
+    private Boolean extractArtwork;
+    private Boolean fileWatch;
 }
