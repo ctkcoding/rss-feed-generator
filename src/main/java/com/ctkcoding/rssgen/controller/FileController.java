@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.File;
+
 @RestController
 @Slf4j
 @AllArgsConstructor
@@ -28,7 +30,7 @@ public class FileController {
     @GetMapping("/rss")
     public ResponseEntity<String> returnRss() {
         // todo - return it as XML isntead of string
-        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getRssFileName()));
+        return ResponseEntity.ok(fileService.returnFileIfExists("", rssConfig.getRssFileName()));
     }
 
     @GetMapping("/episode/{episode}")
@@ -36,7 +38,7 @@ public class FileController {
         // todo - return file if exists
         // todo - return it as a file instead of string
 
-        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir() + episode));
+        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir(), episode));
     }
 
     @GetMapping("/artwork/{artwork}")
@@ -44,7 +46,7 @@ public class FileController {
         // todo - return file if exists
         // todo - return it as a file instead of string
 
-        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir() + artwork));
+        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getArtworkDir(), artwork));
     }
 
 }
