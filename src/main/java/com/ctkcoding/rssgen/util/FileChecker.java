@@ -9,6 +9,8 @@ package com.ctkcoding.rssgen.util;
 
 public class FileChecker {
 
+    String
+
     // todo - root directory
     // todo - rss file name
 
