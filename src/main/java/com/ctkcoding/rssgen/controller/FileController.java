@@ -33,7 +33,7 @@ public class FileController {
         return ResponseEntity.ok(fileService.returnFileIfExists("", rssConfig.getRssFileName()));
     }
 
-    @GetMapping("/episode/{episode}")
+    @GetMapping("/episodes/{episode}")
     public ResponseEntity<String> returnEpisode(@PathVariable String episode) {
         // todo - return it as a file instead of string
         return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir(), episode));
