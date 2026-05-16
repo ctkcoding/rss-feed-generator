@@ -1,7 +1,4 @@
-/node_modules
-/dist
-/coverage
-rss.xml
+info/*
 .env
 /episodes/*.mp3
 /artwork/*
