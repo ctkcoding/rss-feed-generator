@@ -20,20 +20,19 @@ public class FileService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
 
-    public String returnFileIfExists(String file) {
-        Path filePath = basePath.resolve(file);
+    public String returnFileIfExists(String extraPath, String file) {
+        Path filePath = basePath.resolve(extraPath)
+                .resolve(file);
         logger.info("resolved full file path" + filePath);
 
         // todo - return the actual file
-        //  return null if file isn't ready/doesn't exist
-        //  or RE PARSE UNLESS SET NOT TO
-
-        // todo - create PENDING or don't return at all if not exists
-//        try {
-//            return Files.exists(filePath, LinkOption.NOFOLLOW_LINKS);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-        return filePath.toString();
+        // todo - throw an error if file isn't ready/doesn't exist
+        try {
+            if (Files.exists(filePath, LinkOption.NOFOLLOW_LINKS))
+            return "file exists: " +  filePath;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return "file not found: " +  filePath;
     }
 }
