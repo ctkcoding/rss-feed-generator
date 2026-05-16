@@ -35,17 +35,13 @@ public class FileController {
 
     @GetMapping("/episode/{episode}")
     public ResponseEntity<String> returnEpisode(@PathVariable String episode) {
-        // todo - return file if exists
         // todo - return it as a file instead of string
-
         return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir(), episode));
     }
 
     @GetMapping("/artwork/{artwork}")
     public ResponseEntity<String> returnArtwork(@PathVariable String artwork) {
-        // todo - return file if exists
         // todo - return it as a file instead of string
-
         return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getArtworkDir(), artwork));
     }
 
