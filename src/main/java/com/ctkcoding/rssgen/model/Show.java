@@ -1,11 +1,15 @@
 package com.ctkcoding.rssgen.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder(toBuilder = true)
 public class Show {
     String title;
@@ -13,8 +17,7 @@ public class Show {
     String site;
     String link;
     String image;
-    String language; // todo - default us-en
-    String ttl; // todo - what was prev default
-
+    String language;
+    String ttl;
     List<Episode> episodes;
 }
