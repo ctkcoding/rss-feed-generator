@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.*;
 
