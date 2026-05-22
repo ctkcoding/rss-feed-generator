@@ -1,12 +1,12 @@
 package com.ctkcoding.rssgen.service;
 
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -23,24 +23,16 @@ public class FileService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
 
-    public String returnFileIfExists(String extraPath, String file) {
+    public byte[] getFile(String extraPath, String file) throws IOException {
         if (!allowedSubpaths.contains(extraPath)) {
             throw new IllegalArgumentException("Path traversal attempt detected");
          }
 
-         Path filePath = normalizePath(basePath, extraPath, file);
+        Path filePath = normalizePath(basePath, extraPath, file);
+        logger.info("resolved full file path: " + filePath);
 
-         logger.info("resolved full file path" + filePath);
-
-         try {
-             if (Files.exists(filePath, LinkOption.NOFOLLOW_LINKS)) {
-                 return "file exists: " +  filePath;
-              }
-          } catch (Exception e) {
-             throw new RuntimeException(e);
-          }
-         return "file not found: " +  filePath;
-      }
+        return Files.readAllBytes(filePath);
+     }
 
      private Path normalizePath(Path base, String extraPath, String file) {
         Path normalizedBase = base.toAbsolutePath().normalize();
@@ -48,8 +40,8 @@ public class FileService {
 
          if (!resolvedPath.startsWith(normalizedBase)) {
              throw new IllegalArgumentException("Path traversal attempt detected");
-          }
+           }
 
          return resolvedPath;
-     }
+      }
 }
