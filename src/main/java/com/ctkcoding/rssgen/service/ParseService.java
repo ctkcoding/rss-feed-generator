@@ -1,41 +1,182 @@
 package com.ctkcoding.rssgen.service;
 
+import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Episode;
 import com.ctkcoding.rssgen.model.Show;
+import com.mpatric.mp3agic.Mp3File;
+import com.mpatric.mp3agic.ID3v2;
+import com.mpatric.mp3agic.UnsupportedTagException;
+import com.mpatric.mp3agic.InvalidDataException;
+import tools.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Comparator;
+import java.util.List;
+
+@Service
 public class ParseService {
-    public Show generateShow() {
-        // todo - use parse methods to build and return
-        return Show.builder()
-                .build();
-    }
-    public Show parseShow() {
-        // todo - take root and show dirs
-        // todo - parse into a show
-        return null;
-    }
+    private static final Logger logger = LoggerFactory.getLogger(ParseService.class);
 
-    public Episode parseEpisode(String episodeFile) {
-        // todo - add file name to root paths
-        // todo - extract artwork if enabled
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Autowired
+    private RssConfig rssConfig;
+
+    public Show generateShow() {
+        Show show = parseShow();
+
+        String episodesDirPath = rssConfig.getEpisodesDir();
+        Path episodesDir = Path.of(System.getProperty("user.dir")).resolve(episodesDirPath);
+
+        try {
+            List<File> mp3Files = Files.walk(episodesDir)
+                      .filter(p -> p.toFile().isFile() && p.toString().endsWith(rssConfig.getEpisodeFileExtension()))
+                      .map(Path::toFile)
+                      .sorted(Comparator.comparing(File::lastModified).reversed())
+                      .toList();
+
+            List<Episode> episodes = new java.util.ArrayList<>();
+            for (File mp3File : mp3Files) {
+                String filename = mp3File.getName();
+                Episode episode = parseEpisode(filename, show.getLink());
+                episodes.add(episode);
+             }
+
+            show = show.toBuilder().episodes(episodes).build();
+         } catch (IOException e) {
+            logger.error("Failed to list episodes directory: {}", episodesDirPath, e);
+         }
+
+        return show;
+      }
+
+    public Show parseShow() {
+        try {
+            String basePath = System.getProperty("user.dir");
+            String showFilePath = basePath + "/" + rssConfig.getInfoDir() + "/" + rssConfig.getShowFileName();
+            File showFile = new File(showFilePath);
+
+            Show show = objectMapper.readValue(showFile, Show.class);
+
+            if (show.getLanguage() == null || show.getLanguage().isBlank()) {
+                show = show.toBuilder().language("en-us").build();
+             }
+            if (show.getTtl() == null) {
+                show = show.toBuilder().ttl("60").build();
+             }
+
+            return show;
+           } catch (Exception e) {
+             logger.error("Failed to parse show file", e);
+             throw new RuntimeException("Failed to parse show file", e);
+
+         }
+     }
+
+    public Episode parseEpisode(String episodeFile, String showLink) {
+        String episodesDir = rssConfig.getEpisodesDir();
+
+        Path filePath = Path.of(System.getProperty("user.dir")).resolve(episodesDir).resolve(episodeFile);
+
+        String title = episodeFile;
+        String description = "";
+        LocalDateTime pubDate = null;
+
+        try {
+            long lastModified = Files.getLastModifiedTime(filePath).toMillis();
+            pubDate = LocalDateTime.ofInstant(
+                    java.time.Instant.ofEpochMilli(lastModified),
+                    ZoneId.systemDefault()
+              );
+
+              Mp3File mp3File = new Mp3File(filePath.toFile());
+              if (mp3File.hasId3v2Tag()) {
+                  ID3v2 tag = mp3File.getId3v2Tag();
+                  if (tag != null) {
+                      String tit2 = tag.getTitle();
+                      if (tit2 != null && !tit2.isBlank()) {
+                          title = tit2;
+                          }
+                      String tdes = tag.getItunesComment();
+                      if (tdes != null && !tdes.isBlank()) {
+                          description = tdes;
+                          }
+                       }
+                    }
+            } catch (IOException | UnsupportedTagException | InvalidDataException e) {
+             logger.warn("Could not read MP3 metadata for: {}", episodeFile, e);
+           }
+
+        String filenameNoExt = episodeFile;
+        int lastDot = episodeFile.lastIndexOf('.');
+        if (lastDot > 0) {
+            filenameNoExt = episodeFile.substring(0, lastDot);
+         }
+
+        String encodedFilename = URLEncoder.encode(episodeFile, StandardCharsets.UTF_8).replace("+", "%20");
+        String encodedArtworkFilename = URLEncoder.encode(filenameNoExt, StandardCharsets.UTF_8).replace("+", "%20");
+
+        String url = showLink + "/episodes/" + encodedFilename;
+        String image = showLink + "/artwork/" + encodedArtworkFilename + rssConfig.getArtworkFileExtension();
 
         return Episode.builder()
-                .build();
-    }
+                 .title(title)
+                 .description(description)
+                 .url(url)
+                 .pubDate(pubDate)
+                 .image(image)
+                 .enclosure(String.format("{url: %s, type: \"audio/mpeg\"}", url))
+                 .build();
+     }
 
     public Boolean artworkExists(String episodeFile) {
-        // todo - if config enabled
-        // todo - check for artwork;
-        return false;
-    }
+         if (!rssConfig.getExtractArtwork()) {
+             return false;
+         }
+        String artworkFilename = episodeFile;
+        int lastDot = episodeFile.lastIndexOf('.');
+        if (lastDot > 0) {
+            artworkFilename = episodeFile.substring(0, lastDot);
+         }
+        Path artworkPath = Path.of(System.getProperty("user.dir"))
+                 .resolve(rssConfig.getArtworkDir())
+                 .resolve(artworkFilename + rssConfig.getArtworkFileExtension());
+        return Files.exists(artworkPath);
+     }
 
     public void generateArtwork(String artworkPath) {
-        // todo - if config enabled
-        // todo - extract embedded artwork
-    }
-
-    public String generateCoverPath() {
-        // todo - check ts for what this did
-        return "";
-    }
+         if (!rssConfig.getExtractArtwork()) {
+            return;
+         }
+        File file = new File(artworkPath);
+        try {
+            Mp3File mp3File = new Mp3File(file);
+            if (mp3File.hasId3v2Tag()) {
+                ID3v2 tag = mp3File.getId3v2Tag();
+                if (tag != null && tag.getAlbumImage() != null) {
+                    byte[] imageData = tag.getAlbumImage();
+                    String artworkFilePath = artworkPath;
+                    int lastDot = artworkPath.lastIndexOf('.');
+                    if (lastDot > 0) {
+                        artworkFilePath = artworkPath.substring(0, lastDot);
+                       }
+                    String artworkFull = artworkFilePath + rssConfig.getArtworkFileExtension();
+                    Files.write(Path.of(artworkFull), imageData);
+                    }
+                }
+            } catch (IOException | UnsupportedTagException | InvalidDataException e) {
+             logger.error("Failed to generate artwork from: {}", artworkPath, e);
+           }
+         }
 }

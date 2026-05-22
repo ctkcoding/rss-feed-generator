@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+	implementation("com.mpatric:mp3agic:0.9.1")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
