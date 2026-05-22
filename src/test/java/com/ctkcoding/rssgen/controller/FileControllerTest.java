@@ -10,73 +10,97 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
+
+import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class FileControllerTest {
 
-    @Autowired
+     @MockitoBean
     private FileService fileService;
 
-    @MockitoBean
+     @MockitoBean
     private RssConfig rssConfig;
 
-    @Autowired
+     @Autowired
     private MockMvc mockMvc;
 
-    @BeforeEach
+     @BeforeEach
     void setUp() {
-        when(rssConfig.getEpisodesDir()).thenReturn("episodes");
-        when(rssConfig.getArtworkDir()).thenReturn("artwork");
-    }
+         when(rssConfig.getEpisodesDir()).thenReturn("episodes");
+         when(rssConfig.getArtworkDir()).thenReturn("artwork");
+      }
 
-    @Test
+     @Test
     void rss_returnsOkWhenFileExists() throws Exception {
-        when(rssConfig.getRssFileName()).thenReturn("rss.xml");
+         byte[] expectedContent = "some xml content".getBytes();
+         when(fileService.getFile("", "rss.xml")).thenReturn(expectedContent);
+         when(rssConfig.getRssFileName()).thenReturn("rss.xml");
 
-        mockMvc.perform(get("/rss"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("file exists: " + fileService.getBasePath() +  "/rss.xml"));
-    }
+         mockMvc.perform(get("/rss"))
+                   .andExpect(status().isOk())
+                   .andExpect(content().contentType("text/xml"))
+                   .andExpect(header().string("Content-Disposition",
+                        startsWith("attachment; filename=")))
+                   .andExpect(content().bytes(expectedContent));
+      }
 
-    @Test
+     @Test
     void episode_returnsOkWhenFileExists() throws Exception {
-        mockMvc.perform(get("/episodes/01 Episode 1.mp3"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("file exists: " + fileService.getBasePath() +  "/episodes/01 Episode 1.mp3"));
-    }
+         byte[] expectedContent = "mp3 audio data".getBytes();
+         when(fileService.getFile("episodes", "01 Episode 1.mp3")).thenReturn(expectedContent);
 
-    @Test
+         mockMvc.perform(get("/episodes/01 Episode 1.mp3"))
+                   .andExpect(status().isOk())
+                   .andExpect(content().contentType("audio/mpeg"))
+                   .andExpect(header().string("Content-Disposition",
+                        startsWith("attachment; filename=")))
+                   .andExpect(content().bytes(expectedContent));
+      }
+
+     @Test
     void artwork_returnsOkWhenFileExists() throws Exception {
-        mockMvc.perform(get("/artwork/01 Episode 1.jpeg"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("file exists: " + fileService.getBasePath() +  "/artwork/01 Episode 1.jpeg"));
-    }
+         byte[] expectedContent = "jpeg image data".getBytes();
+         when(fileService.getFile("artwork", "01 Episode 1.jpeg")).thenReturn(expectedContent);
 
-    @Test
-    void rss_returnsFileNotFoundWhenFileDoesNotExist() throws Exception {
-        when(rssConfig.getRssFileName()).thenReturn("missing.xml");
+         mockMvc.perform(get("/artwork/01 Episode 1.jpeg"))
+                   .andExpect(status().isOk())
+                   .andExpect(content().contentType("image/jpeg"))
+                   .andExpect(header().string("Content-Disposition",
+                        startsWith("attachment; filename=")))
+                   .andExpect(content().bytes(expectedContent));
+      }
 
-        mockMvc.perform(get("/rss"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("file not found: " + fileService.getBasePath() +  "/missing.xml"));
-    }
+     @Test
+    void rss_returnsNotFoundWhenFileDoesNotExist() throws Exception {
+         when(rssConfig.getRssFileName()).thenReturn("missing.xml");
+         when(fileService.getFile("", "missing.xml")).thenThrow(new NoSuchFileException("missing.xml"));
 
-    @Test
-    void episode_returnsFileNotFoundWhenFileDoesNotExist() throws Exception {
-        mockMvc.perform(get("/episodes/missing.mp3"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("file not found: " + fileService.getBasePath() +  "/episodes/missing.mp3"));
-    }
+         mockMvc.perform(get("/rss"))
+                   .andExpect(status().isNotFound());
+      }
 
-    @Test
-    void artwork_returnsFileNotFoundWhenFileDoesNotExist() throws Exception {
-                mockMvc.perform(get("/artwork/missing.jpg"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("file not found: " + fileService.getBasePath() +  "/artwork/missing.jpg"));
-    }
+     @Test
+    void episode_returnsNotFoundWhenFileDoesNotExist() throws Exception {
+         when(fileService.getFile("episodes", "missing.mp3")).thenThrow(new NoSuchFileException("missing.mp3"));
+
+         mockMvc.perform(get("/episodes/missing.mp3"))
+                   .andExpect(status().isNotFound());
+      }
+
+     @Test
+    void artwork_returnsNotFoundWhenFileDoesNotExist() throws Exception {
+         when(fileService.getFile("artwork", "missing.jpg")).thenThrow(new NoSuchFileException("missing.jpg"));
+
+         mockMvc.perform(get("/artwork/missing.jpg"))
+                   .andExpect(status().isNotFound());
+      }
 }

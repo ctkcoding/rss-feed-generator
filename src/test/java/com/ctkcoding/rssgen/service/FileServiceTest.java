@@ -3,127 +3,125 @@ package com.ctkcoding.rssgen.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.NoSuchFileException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class FileServiceTest {
 
      private FileService fileService;
-     private String testResourcesPath;
+     private Path testResourcesDir;
 
      @BeforeEach
-    void setUp() throws URISyntaxException, IllegalArgumentException {
-        fileService = new FileService();
-        String rssXmlPath = getClass().getResource("/rss.xml").toURI().getPath();
-        testResourcesPath = Path.of(rssXmlPath).getParent().toString();
-        setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+    void setUp() throws URISyntaxException {
+         fileService = new FileService();
+         String rssXmlPath = getClass().getResource("/rss.xml").toURI().getPath();
+         testResourcesDir = Path.of(rssXmlPath).getParent();
+         setBasePath(testResourcesDir);
+         }
+
+         @Test
+     void returnsRssFile() throws IOException {
+          fileService = new FileService();
+          setBasePath(testResourcesDir);
+
+          byte[] result = fileService.getFile("", "rss.xml");
+          assertTrue(result.length > 0);
           }
 
          @Test
-     void returnsRssFile() {
+     void returnsEpisodeFile() throws IOException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
-          String result = fileService.returnFileIfExists("", "rss.xml");
-          assertTrue(result.contains("file exists:"));
-          assertTrue(result.endsWith("rss.xml"));
+          byte[] result = fileService.getFile("episodes", "Episode 01.mp3");
+          assertTrue(result.length > 0);
           }
 
          @Test
-     void returnsEpisodeFile() {
+     void returnsArtworkFile() throws IOException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
-          String result = fileService.returnFileIfExists("episodes", "Episode 01.mp3");
-          assertTrue(result.contains("file exists:"));
-          assertTrue(result.endsWith("Episode 01.mp3"));
+          byte[] result = fileService.getFile("artwork", "Episode 01.jpeg");
+          assertTrue(result.length > 0);
           }
 
          @Test
-     void returnsArtworkFile() {
+     void returnsNotFoundForMissingRss() throws IOException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
-          String result = fileService.returnFileIfExists("artwork", "Episode 01.jpeg");
-          assertTrue(result.contains("file exists:"));
-          assertTrue(result.endsWith("Episode 01.jpeg"));
+          assertThrows(NoSuchFileException.class,
+                  () -> fileService.getFile("", "nonexistent.xml"));
           }
 
          @Test
-     void returnsNotFoundForMissingRss() {
+     void returnsNotFoundForMissingEpisode() throws IOException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
-          String result = fileService.returnFileIfExists("", "nonexistent.xml");
-          assertEquals("file not found: " + testResourcesPath + "/nonexistent.xml", result);
+          assertThrows(NoSuchFileException.class,
+                  () -> fileService.getFile("episodes", "missing.mp3"));
           }
 
          @Test
-     void returnsNotFoundForMissingEpisode() {
+     void returnsNotFoundForMissingArtwork() throws IOException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
-          String result = fileService.returnFileIfExists("episodes", "missing.mp3");
-          assertTrue(result.contains("file not found:"));
-          assertTrue(result.endsWith("episodes/missing.mp3"));
+          assertThrows(NoSuchFileException.class,
+                  () -> fileService.getFile("artwork", "missing.jpg"));
           }
 
-         @Test
-     void returnsNotFoundForMissingArtwork() {
-          fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
-
-          String result = fileService.returnFileIfExists("artwork", "missing.jpg");
-          assertTrue(result.contains("file not found:"));
-          assertTrue(result.endsWith("artwork/missing.jpg"));
-          }
-
-           @Test
+             @Test
      void rejectsPathTraversalInFileName() throws URISyntaxException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
           String path = "episodes" + java.io.File.separator + ".." + java.io.File.separator + ".." + java.io.File.separator + ".." + java.io.File.separator + ".." + java.io.File.separator + "rss.xml";
           assertThrows(IllegalArgumentException.class,
-                    () -> fileService.returnFileIfExists("episodes", path));
-        }
+                     () -> fileService.getFile("episodes", path));
+          }
 
          @Test
-     void rejectsPathTraversalInExtraPath() {
+     void rejectsPathTraversalInExtraPath() throws URISyntaxException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
           assertThrows(IllegalArgumentException.class,
-                  () -> fileService.returnFileIfExists("../../artwork", "../rss.xml"));
-          }
+                   () -> fileService.getFile("../../artwork", "../rss.xml"));
+           }
 
          @Test
-     void rejectsPathTraversalInBothFields() {
+     void rejectsPathTraversalInBothFields() throws URISyntaxException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
           assertThrows(IllegalArgumentException.class,
-                  () -> fileService.returnFileIfExists("../artwork", "../rss.xml"));
-          }
+                   () -> fileService.getFile("../artwork", "../rss.xml"));
+           }
 
          @Test
-     void allowsDotsInFilename() {
+     void allowsDotsInFilename() throws IOException {
           fileService = new FileService();
-          setBasePath(Path.of(testResourcesPath).toAbsolutePath());
+          setBasePath(testResourcesDir);
 
-          String result = fileService.returnFileIfExists("episodes", "Episode 01.mp3");
-          assertTrue(result.contains("file exists:"));
-          }
+          byte[] result = fileService.getFile("episodes", "Episode 01.mp3");
+          assertTrue(result.length > 0);
+           }
 
-      private void setBasePath(Path path) {
+     private void setBasePath(Path path) {
           try {
               java.lang.reflect.Field f = FileService.class.getDeclaredField("basePath");
               f.setAccessible(true);
               f.set(fileService, path);
-              } catch (Exception e) {
+               } catch (Exception e) {
               throw new RuntimeException("Failed to set basePath", e);
-              }
-          }
-      }
+               }
+           }
+       }

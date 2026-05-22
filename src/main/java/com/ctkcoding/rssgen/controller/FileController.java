@@ -7,12 +7,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 
 @RestController
 @Slf4j
@@ -28,21 +32,49 @@ public class FileController {
     RssConfig rssConfig;
 
     @GetMapping("/rss")
-    public ResponseEntity<String> returnRss() {
-        // todo - return it as XML isntead of string
-        return ResponseEntity.ok(fileService.returnFileIfExists("", rssConfig.getRssFileName()));
-    }
+    public ResponseEntity<byte[]> returnRss() {
+        return buildResponse("", rssConfig.getRssFileName(), "text/xml", rssConfig.getRssFileName());
+     }
 
     @GetMapping("/episodes/{episode}")
-    public ResponseEntity<String> returnEpisode(@PathVariable String episode) {
-        // todo - return it as a file instead of string
-        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getEpisodesDir(), episode));
-    }
+    public ResponseEntity<byte[]> returnEpisode(@PathVariable String episode) {
+        String filename = extractFilename(episode);
+        return buildResponse(rssConfig.getEpisodesDir(), episode, "audio/mpeg", filename + ".mp3");
+     }
 
     @GetMapping("/artwork/{artwork}")
-    public ResponseEntity<String> returnArtwork(@PathVariable String artwork) {
-        // todo - return it as a file instead of string
-        return ResponseEntity.ok(fileService.returnFileIfExists(rssConfig.getArtworkDir(), artwork));
-    }
+    public ResponseEntity<byte[]> returnArtwork(@PathVariable String artwork) {
+        String filename = extractFilename(artwork);
+        return buildResponse(rssConfig.getArtworkDir(), artwork, "image/jpeg", filename + ".jpeg");
+     }
 
+     private ResponseEntity<byte[]> buildResponse(String extraPath, String file, String contentType, String downloadFilename) {
+        try {
+            byte[] content = fileService.getFile(extraPath, file);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.setContentDisposition(ContentDisposition.attachment().filename(downloadFilename).build());
+            return ResponseEntity.ok().headers(headers).body(content);
+         } catch (IllegalArgumentException e) {
+            logger.warn("Path traversal attempt: {}", file);
+            return ResponseEntity.badRequest().build();
+         } catch (NoSuchFileException e) {
+            logger.warn("File not found: {}", file);
+            return ResponseEntity.notFound().build();
+         } catch (IOException e) {
+            logger.error("Error reading file: {}", file, e);
+            return ResponseEntity.internalServerError().build();
+         }
+     }
+
+     private String extractFilename(String slug) {
+        if (slug.contains("/") || slug.contains("..")) {
+            throw new IllegalArgumentException("Invalid filename");
+         }
+        int lastDot = slug.lastIndexOf('.');
+        if (lastDot > 0) {
+            return slug.substring(0, lastDot);
+         }
+        return slug;
+     }
 }
