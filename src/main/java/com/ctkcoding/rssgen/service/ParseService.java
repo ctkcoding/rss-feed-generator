@@ -39,24 +39,58 @@ public class ParseService {
         String episodesDirPath = rssConfig.getEpisodesDir();
         Path episodesDir = Path.of(System.getProperty("user.dir")).resolve(episodesDirPath);
 
-        try {
-            List<File> mp3Files = Files.walk(episodesDir)
-                      .filter(p -> p.toFile().isFile() && p.toString().endsWith(rssConfig.getEpisodeFileExtension()))
-                      .map(Path::toFile)
-                      .sorted(Comparator.comparing(File::lastModified).reversed())
-                      .toList();
+        if (!Files.exists(episodesDir) || !Files.isDirectory(episodesDir)) {
+            throw new IllegalStateException("Episodes directory does not exist: " + episodesDirPath);
+          }
 
-            List<Episode> episodes = new java.util.ArrayList<>();
-            for (File mp3File : mp3Files) {
-                String filename = mp3File.getName();
+        List<File> mp3Files;
+        try {
+            mp3Files = Files.walk(episodesDir)
+                       .filter(p -> p.toFile().isFile() && p.toString().endsWith(rssConfig.getEpisodeFileExtension()))
+                       .map(Path::toFile)
+                       .sorted(Comparator.comparing(File::lastModified).reversed())
+                       .toList();
+          } catch (IOException e) {
+            logger.error("Failed to list episodes directory: {}", episodesDirPath, e);
+            throw new IllegalStateException("Failed to list episodes directory: " + episodesDirPath, e);
+          }
+
+        if (mp3Files.isEmpty()) {
+            show = show.toBuilder().episodes(new java.util.ArrayList<>()).build();
+            return show;
+          }
+
+        List<Episode> episodes = new java.util.ArrayList<>();
+        List<String> errors = new java.util.ArrayList<>();
+        for (File mp3File : mp3Files) {
+            String filename = mp3File.getName();
+            try {
                 Episode episode = parseEpisode(filename, show.getLink());
                 episodes.add(episode);
-             }
+              } catch (Exception e) {
+                logger.warn("Could not parse episode {}, skipping: {}", filename, e.getMessage());
+                errors.add(filename + " - " + e.getMessage());
+              }
+          }
 
-            show = show.toBuilder().episodes(episodes).build();
-         } catch (IOException e) {
-            logger.error("Failed to list episodes directory: {}", episodesDirPath, e);
-         }
+        if (!errors.isEmpty()) {
+            String basePath = System.getProperty("user.dir");
+            String errorLogPath = basePath + "/" + rssConfig.getErrorLogFile();
+            try {
+                Path errorLogFile = Path.of(errorLogPath);
+                Path errorLogDir = errorLogFile.getParent();
+                if (errorLogDir != null) {
+                    Files.createDirectories(errorLogDir);
+                    }
+                Files.writeString(errorLogFile, String.join(System.lineSeparator(), errors) + System.lineSeparator(),
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+                logger.info("Wrote {} parsing errors to {}", errors.size(), errorLogPath);
+                } catch (IOException e) {
+                logger.error("Failed to write error log: {}", errorLogPath, e);
+                }
+            }
+
+        show = show.toBuilder().episodes(episodes).build();
 
         return show;
       }
@@ -70,11 +104,11 @@ public class ParseService {
             Show show = objectMapper.readValue(showFile, Show.class);
 
             if (show.getLanguage() == null || show.getLanguage().isBlank()) {
-                show = show.toBuilder().language("en-us").build();
-             }
+                throw new IllegalArgumentException("Language is missing or blank in show.json");
+              }
             if (show.getTtl() == null) {
-                show = show.toBuilder().ttl("60").build();
-             }
+                throw new IllegalArgumentException("TTL is missing in show.json");
+              }
 
             return show;
            } catch (Exception e) {
@@ -108,15 +142,16 @@ public class ParseService {
                       if (tit2 != null && !tit2.isBlank()) {
                           title = tit2;
                           }
-                      String tdes = tag.getItunesComment();
+                      String tdes = tag.getComment();
                       if (tdes != null && !tdes.isBlank()) {
                           description = tdes;
                           }
                        }
                     }
-            } catch (IOException | UnsupportedTagException | InvalidDataException e) {
-             logger.warn("Could not read MP3 metadata for: {}", episodeFile, e);
-           }
+              } catch (IOException | UnsupportedTagException | InvalidDataException e) {
+              logger.warn("Could not read MP3 metadata for: {}", episodeFile, e);
+              throw new RuntimeException("Failed to parse MP3 metadata for: " + episodeFile, e);
+             }
 
         String filenameNoExt = episodeFile;
         int lastDot = episodeFile.lastIndexOf('.');
