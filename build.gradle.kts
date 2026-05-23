@@ -20,7 +20,9 @@ repositories {
 dependencies {
 	implementation("com.mpatric:mp3agic:0.9.1")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
-	compileOnly("org.projectlombok:lombok")
+    implementation("com.rometools:rome:2.1.0")
+    implementation("com.rometools:rome-modules:2.1.0")
+    compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testImplementation("org.springframework.boot:spring-boot-test")
