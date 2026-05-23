@@ -40,8 +40,7 @@ class ParseServiceTest {
                 "site": "https://timecrisis.apple.com",
                 "link": "https://podcast.local",
                 "image": "cover.jpg",
-                "language": "en-us",
-                "ttl": 60
+                "language": "en-us"
                 }
                 """);
     }
@@ -110,7 +109,6 @@ class ParseServiceTest {
         assertEquals("https://podcast.local", show.getLink());
         assertEquals("cover.jpg", show.getImage());
         assertEquals("en-us", show.getLanguage());
-        assertEquals("60", show.getTtl());
         assertNull(show.getEpisodes());
     }
 
@@ -119,8 +117,7 @@ class ParseServiceTest {
         writeShowJson("""
                  {
                 "title": "Test Show",
-                 "link": "https://example.com",
-                 "ttl": 60
+                 "link": "https://example.com"
                  }
                  """);
         ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
@@ -137,7 +134,6 @@ class ParseServiceTest {
                  {
                  "title": "Test Show",
                  "link": "https://example.com",
-                 "ttl": 60,
                  "language": "   "
                  }
                  """);
@@ -147,23 +143,6 @@ class ParseServiceTest {
         assertEquals("Failed to parse show file", exception.getMessage());
         assertInstanceOf(IllegalArgumentException.class, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains("Language"));
-     }
-
-     @Test
-     void parseShow_throwsWhenTtlMissing() {
-        writeShowJson("""
-                 {
-                 "title": "Test Show",
-                 "link": "https://example.com",
-                 "language": "en-us"
-                 }
-                 """);
-        ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> ctx.service.parseShow());
-        assertEquals("Failed to parse show file", exception.getMessage());
-        assertInstanceOf(IllegalArgumentException.class, exception.getCause());
-        assertTrue(exception.getCause().getMessage().contains("TTL"));
      }
 
     @Test

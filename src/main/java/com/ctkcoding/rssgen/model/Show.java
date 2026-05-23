@@ -33,10 +33,5 @@ public class Show {
     @JsonProperty
     private String language;
 
-     @JsonProperty
-    private String ttl;
-
-    private LocalDateTime lastBuildDate;
-
     private List<Episode> episodes;
 }

@@ -7,10 +7,10 @@ import com.mpatric.mp3agic.Mp3File;
 import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.UnsupportedTagException;
 import com.mpatric.mp3agic.InvalidDataException;
+import org.springframework.beans.factory.annotation.Autowired;
 import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -92,17 +92,8 @@ public class ParseService {
 
         show = show.toBuilder().episodes(episodes).build();
 
-        if (!episodes.isEmpty()) {
-            LocalDateTime mostRecent = episodes.stream()
-                 .map(Episode::getPubDate)
-                 .filter(java.util.Objects::nonNull)
-                 .max(LocalDateTime::compareTo)
-                 .orElse(null);
-            show = show.toBuilder().lastBuildDate(mostRecent).build();
-           }
-
         return show;
-      }
+       }
 
     public Show parseShow() {
         try {
@@ -114,9 +105,6 @@ public class ParseService {
 
             if (show.getLanguage() == null || show.getLanguage().isBlank()) {
                 throw new IllegalArgumentException("Language is missing or blank in show.json");
-              }
-            if (show.getTtl() == null) {
-                throw new IllegalArgumentException("TTL is missing in show.json");
               }
 
             return show;
