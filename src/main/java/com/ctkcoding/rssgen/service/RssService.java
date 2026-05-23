@@ -125,8 +125,7 @@ public class RssService {
         if (imageData != null && !imageData.isBlank()) {
             itunesItem.setImageUri(imageData);
            }
-        Duration duration = new Duration();
-        duration.setMilliseconds(0); // TODO: extract duration from MP3 metadata tags
+        Duration duration = new Duration(episode.getDuration() * 1000L);
         itunesItem.setDuration(duration);
         itunesItem.setExplicit(false);
         item.getModules().add(itunesItem);
