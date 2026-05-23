@@ -34,3 +34,8 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+tasks.register<JavaExec>("runDump") {
+    mainClass = "com.ctkcoding.rssgen.service.RssServiceDump"
+    classpath = sourceSets["main"].runtimeClasspath
+}

@@ -56,17 +56,20 @@ class ParseServiceTest {
         when(config.getExtractArtwork()).thenReturn(false);
         when(config.getErrorLogFile()).thenReturn("parse-errors.log");
         return config;
-    }
+     }
 
     private ServiceContext injectConfig(ParseService service, RssConfig mock) {
+        RssService mockRssService = mock(RssService.class);
+        when(mockRssService.writeRss(any(Show.class))).thenReturn("rss.xml");
         try {
             FieldSetter.setField(service, ParseService.class.getDeclaredField("rssConfig"), mock);
+            FieldSetter.setField(service, ParseService.class.getDeclaredField("rssService"), mockRssService);
             System.setProperty("user.dir", tempDir.toString());
-        } catch (Exception e) {
+           } catch (Exception e) {
             fail("Failed to inject config: " + e.getMessage());
-        }
+           }
         return new ServiceContext(service, mock);
-    }
+     }
 
     private void copyEpisodes() {
         try {
@@ -320,17 +323,17 @@ class ParseServiceTest {
         assertTrue(episode.getPubDate().isAfter(LocalDateTime.of(2020, 1, 1, 0, 0, 0)));
     }
 
-    @Test
+      @Test
     void parseEpisode_enclosureContainsUrlAndType() throws IOException {
         copyEpisodes();
         ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
 
         Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
-        assertNotNull(episode.getEnclosure());
-        assertTrue(episode.getEnclosure().contains("url:"));
-        assertTrue(episode.getEnclosure().contains("type:"));
-    }
+        assertNotNull(episode.getEnclosureUrl());
+        assertTrue(episode.getEnclosureUrl().contains("https://podcast.local/episodes/"));
+        assertEquals("audio/mpeg", episode.getEnclosureType());
+      }
 
     @Test
     void parseEpisode_throwsForMissingFile() {
