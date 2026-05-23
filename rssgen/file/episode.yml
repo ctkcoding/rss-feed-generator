@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: http://localhost:8080/episode/243 With John Fogerty.mp3
+  url: http://localhost:8080/episode/../artwork/243 With John Fogerty.jpeg
   auth: inherit
 
 settings:
