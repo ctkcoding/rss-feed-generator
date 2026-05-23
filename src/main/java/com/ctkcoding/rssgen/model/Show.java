@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -32,8 +33,10 @@ public class Show {
     @JsonProperty
     private String language;
 
-    @JsonProperty
+     @JsonProperty
     private String ttl;
+
+    private LocalDateTime lastBuildDate;
 
     private List<Episode> episodes;
 }

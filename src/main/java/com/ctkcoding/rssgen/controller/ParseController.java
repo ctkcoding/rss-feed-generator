@@ -21,7 +21,6 @@ public class ParseController {
     public ResponseEntity<String> returnRss() {
 
         Show show = parseService.generateShow();
-        log.info("parsed show: " + show.toString());
         return ResponseEntity.ok("Starting a new parse");
     }
 }
