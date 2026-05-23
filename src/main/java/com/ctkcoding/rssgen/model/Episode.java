@@ -16,4 +16,5 @@ public class Episode {
     String enclosureUrl; // "{url: enclosure, type: \"audio/mpeg\"}"
     String enclosureType; // type: \"audio/mpeg\"
     Long enclosureLength; // todo - get byte length of file
+    int duration;
 }

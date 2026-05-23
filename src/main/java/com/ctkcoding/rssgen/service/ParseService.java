@@ -30,7 +30,7 @@ public class ParseService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
+     @Autowired
     private RssConfig rssConfig;
 
     public Show generateShow() {
@@ -123,32 +123,34 @@ public class ParseService {
         String title = episodeFile;
         String description = "";
         LocalDateTime pubDate = null;
+        int duration = 0;
 
         try {
             long lastModified = Files.getLastModifiedTime(filePath).toMillis();
             pubDate = LocalDateTime.ofInstant(
                     java.time.Instant.ofEpochMilli(lastModified),
                     ZoneId.systemDefault()
-              );
+               );
 
               Mp3File mp3File = new Mp3File(filePath.toFile());
+              duration = (int) mp3File.getLengthInSeconds();
               if (mp3File.hasId3v2Tag()) {
                   ID3v2 tag = mp3File.getId3v2Tag();
                   if (tag != null) {
                       String tit2 = tag.getTitle();
                       if (tit2 != null && !tit2.isBlank()) {
                           title = tit2;
-                          }
-                      String tdes = tag.getComment();
-                      if (tdes != null && !tdes.isBlank()) {
-                          description = tdes;
-                          }
-                       }
-                    }
-              } catch (IOException | UnsupportedTagException | InvalidDataException e) {
-              logger.warn("Could not read MP3 metadata for: {}", episodeFile, e);
-              throw new RuntimeException("Failed to parse MP3 metadata for: " + episodeFile, e);
-             }
+                           }
+                       String tdes = tag.getComment();
+                       if (tdes != null && !tdes.isBlank()) {
+                           description = tdes;
+                            }
+                        }
+                     }
+                } catch (IOException | UnsupportedTagException | InvalidDataException e) {
+               logger.warn("Could not read MP3 metadata for: {}", episodeFile, e);
+               throw new RuntimeException("Failed to parse MP3 metadata for: " + episodeFile, e);
+               }
 
         String filenameNoExt = episodeFile;
         int lastDot = episodeFile.lastIndexOf('.');
@@ -169,16 +171,17 @@ public class ParseService {
             logger.warn("Could not determine file size for: {}", episodeFile, e);
             }
 
-        return Episode.builder()
-                   .title(title)
-                   .description(description)
-                   .url(url)
-                   .pubDate(pubDate)
-                   .image(image)
-                   .enclosureUrl(url)
-                   .enclosureType("audio/mpeg")
-                   .enclosureLength(fileSize)
-                    .build();
+         return Episode.builder()
+                      .title(title)
+                      .description(description)
+                      .url(url)
+                      .pubDate(pubDate)
+                      .image(image)
+                      .enclosureUrl(url)
+                      .enclosureType("audio/mpeg")
+                      .enclosureLength(fileSize)
+                      .duration(duration)
+                      .build();
     }
 
     public Boolean artworkExists(String episodeFile) {
