@@ -92,6 +92,15 @@ public class ParseService {
 
         show = show.toBuilder().episodes(episodes).build();
 
+        if (!episodes.isEmpty()) {
+            LocalDateTime mostRecent = episodes.stream()
+                 .map(Episode::getPubDate)
+                 .filter(java.util.Objects::nonNull)
+                 .max(LocalDateTime::compareTo)
+                 .orElse(null);
+            show = show.toBuilder().lastBuildDate(mostRecent).build();
+           }
+
         return show;
       }
 
@@ -157,7 +166,7 @@ public class ParseService {
         int lastDot = episodeFile.lastIndexOf('.');
         if (lastDot > 0) {
             filenameNoExt = episodeFile.substring(0, lastDot);
-         }
+           }
 
         String encodedFilename = URLEncoder.encode(episodeFile, StandardCharsets.UTF_8).replace("+", "%20");
         String encodedArtworkFilename = URLEncoder.encode(filenameNoExt, StandardCharsets.UTF_8).replace("+", "%20");
@@ -165,15 +174,24 @@ public class ParseService {
         String url = showLink + "/episodes/" + encodedFilename;
         String image = showLink + "/artwork/" + encodedArtworkFilename + rssConfig.getArtworkFileExtension();
 
+        long fileSize = 0;
+        try {
+            fileSize = Files.size(filePath);
+          } catch (IOException e) {
+            logger.warn("Could not determine file size for: {}", episodeFile, e);
+            }
+
         return Episode.builder()
-                 .title(title)
-                 .description(description)
-                 .url(url)
-                 .pubDate(pubDate)
-                 .image(image)
-                 .enclosure(String.format("{url: %s, type: \"audio/mpeg\"}", url))
-                 .build();
-     }
+                   .title(title)
+                   .description(description)
+                   .url(url)
+                   .pubDate(pubDate)
+                   .image(image)
+                   .enclosureUrl(url)
+                   .enclosureType("audio/mpeg")
+                   .enclosureLength(fileSize)
+                    .build();
+    }
 
     public Boolean artworkExists(String episodeFile) {
          if (!rssConfig.getExtractArtwork()) {

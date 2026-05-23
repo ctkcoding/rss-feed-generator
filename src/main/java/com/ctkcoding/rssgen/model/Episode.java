@@ -13,5 +13,7 @@ public class Episode {
     String url;
     LocalDateTime pubDate; // todo - does XML need this as lower case?
     String image;
-    String enclosure; // todo - in .build() always "{url: enclosure, type: \"audio/mpeg\"}";
+    String enclosureUrl; // "{url: enclosure, type: \"audio/mpeg\"}"
+    String enclosureType; // type: \"audio/mpeg\"
+    Long enclosureLength; // todo - get byte length of file
 }
