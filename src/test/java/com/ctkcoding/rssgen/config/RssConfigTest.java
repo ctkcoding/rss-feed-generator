@@ -24,8 +24,9 @@ class RssConfigTest {
         assertEquals(".mp3", rssConfig.getEpisodeFileExtension());
         assertEquals(".jpeg", rssConfig.getArtworkFileExtension());
         assertEquals(false, rssConfig.getExtractArtwork());
-        assertEquals(false, rssConfig.getFileWatch());
-        assertEquals("en-us", rssConfig.getLanguage());
-    }
+         assertEquals(false, rssConfig.getFileWatch());
+         assertEquals("en-us", rssConfig.getLanguage());
+         assertEquals("parse-errors.log", rssConfig.getErrorLogFile());
+      }
 
 }

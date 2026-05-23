@@ -23,4 +23,7 @@ public class RssConfig {
 
     private Boolean extractArtwork;
     private Boolean fileWatch;
+
+    // todo - clean
+    private String errorLogFile = "parse-errors.log";
 }
