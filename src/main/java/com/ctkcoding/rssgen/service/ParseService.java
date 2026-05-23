@@ -41,24 +41,24 @@ public class ParseService {
 
         if (!Files.exists(episodesDir) || !Files.isDirectory(episodesDir)) {
             throw new IllegalStateException("Episodes directory does not exist: " + episodesDirPath);
-          }
+        }
 
         List<File> mp3Files;
         try {
             mp3Files = Files.walk(episodesDir)
-                       .filter(p -> p.toFile().isFile() && p.toString().endsWith(rssConfig.getEpisodeFileExtension()))
-                       .map(Path::toFile)
-                       .sorted(Comparator.comparing(File::lastModified).reversed())
-                       .toList();
-          } catch (IOException e) {
+                    .filter(p -> p.toFile().isFile() && p.toString().endsWith(rssConfig.getEpisodeFileExtension()))
+                    .map(Path::toFile)
+                    .sorted(Comparator.comparing(File::lastModified).reversed())
+                    .toList();
+        } catch (IOException e) {
             logger.error("Failed to list episodes directory: {}", episodesDirPath, e);
             throw new IllegalStateException("Failed to list episodes directory: " + episodesDirPath, e);
-          }
+        }
 
         if (mp3Files.isEmpty()) {
             show = show.toBuilder().episodes(new java.util.ArrayList<>()).build();
             return show;
-          }
+        }
 
         List<Episode> episodes = new java.util.ArrayList<>();
         List<String> errors = new java.util.ArrayList<>();
@@ -67,11 +67,11 @@ public class ParseService {
             try {
                 Episode episode = parseEpisode(filename, show.getLink());
                 episodes.add(episode);
-              } catch (Exception e) {
+            } catch (Exception e) {
                 logger.warn("Could not parse episode {}, skipping: {}", filename, e.getMessage());
                 errors.add(filename + " - " + e.getMessage());
-              }
-          }
+            }
+        }
 
         if (!errors.isEmpty()) {
             String basePath = System.getProperty("user.dir");
@@ -81,19 +81,19 @@ public class ParseService {
                 Path errorLogDir = errorLogFile.getParent();
                 if (errorLogDir != null) {
                     Files.createDirectories(errorLogDir);
-                    }
-                Files.writeString(errorLogFile, String.join(System.lineSeparator(), errors) + System.lineSeparator(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-                logger.info("Wrote {} parsing errors to {}", errors.size(), errorLogPath);
-                } catch (IOException e) {
-                logger.error("Failed to write error log: {}", errorLogPath, e);
                 }
+                Files.writeString(errorLogFile, String.join(System.lineSeparator(), errors) + System.lineSeparator(),
+                        java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+                logger.info("Wrote {} parsing errors to {}", errors.size(), errorLogPath);
+            } catch (IOException e) {
+                logger.error("Failed to write error log: {}", errorLogPath, e);
             }
+        }
 
         show = show.toBuilder().episodes(episodes).build();
 
         return show;
-       }
+    }
 
     public Show parseShow() {
         try {
