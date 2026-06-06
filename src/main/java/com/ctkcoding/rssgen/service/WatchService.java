@@ -2,17 +2,21 @@ package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Show;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// todo - enable scheduling annotation? or add that to the
 @Slf4j
 @Component
 public class WatchService {
@@ -21,19 +25,109 @@ public class WatchService {
 
     private static final Logger logger = LoggerFactory.getLogger(WatchService.class);
 
-    @Autowired
+     @Autowired
     ParseService parseService;
 
-    @Autowired
+     @Autowired
     RssService rssService;
 
-    @Autowired
+     @Autowired
     RssConfig rssConfig;
 
-    // todo - watch service should watch the episodes directory that parse service reads episodes file from
-    // todo - if new files, deleted files, or changes to existing files, set value of newFileChanges to true
+    private java.nio.file.WatchService fileWatchService;
+    private Thread watchThread;
+    private volatile boolean running = false;
 
-    @Scheduled(cron = "0 * * * * *")
+     @EventListener(ApplicationStartedEvent.class)
+    void startWatching() {
+        if (!Boolean.TRUE.equals(rssConfig.getFileWatch())) {
+            logger.info("File watching is disabled");
+            return;
+        }
+
+        Path episodesDir = Path.of(System.getProperty("user.dir"))
+                 .resolve(rssConfig.getEpisodesDir());
+
+        if (!Files.exists(episodesDir) || !Files.isDirectory(episodesDir)) {
+            throw new IllegalStateException(
+                    "Episodes directory does not exist: " + episodesDir +
+                    ". This is required for the application to function.");
+        }
+
+        try {
+            fileWatchService = FileSystems.getDefault().newWatchService();
+            episodesDir.register(fileWatchService,
+                    StandardWatchEventKinds.ENTRY_CREATE,
+                    StandardWatchEventKinds.ENTRY_DELETE,
+                    StandardWatchEventKinds.ENTRY_MODIFY);
+
+            running = true;
+            watchThread = new Thread(this::watchLoop, "rss-watch");
+            watchThread.setDaemon(true);
+            watchThread.start();
+            logger.info("Started watching: {}", episodesDir);
+        } catch (IOException e) {
+            logger.error("Failed to create file watcher for: {}", episodesDir, e);
+            throw new RuntimeException("Failed to start file watcher", e);
+        }
+    }
+
+    private void watchLoop() {
+        while (running) {
+            try {
+                WatchKey key = fileWatchService.take();
+                for (WatchEvent<?> event : key.pollEvents()) {
+                    if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
+                        continue;
+                    }
+
+                    Path filename = (Path) event.context();
+                    if (!isEpisodeFile(filename)) {
+                        continue;
+                    }
+
+                    logger.info("File change detected: {} ({})", filename, event.kind());
+                    newFileChanges.set(true);
+                }
+                key.reset();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                logger.error("Watch loop error: {}", e.getMessage(), e);
+                break;
+            }
+        }
+    }
+
+    private boolean isEpisodeFile(Path filename) {
+        String name = filename.toString().toLowerCase();
+        String ext = rssConfig.getEpisodeFileExtension().toLowerCase();
+        return ext.isEmpty() || name.endsWith(ext);
+    }
+
+     @PreDestroy
+    void stopWatching() {
+        running = false;
+        if (fileWatchService != null) {
+            try {
+                fileWatchService.close();
+            } catch (IOException e) {
+                logger.warn("Failed to close file watcher", e);
+            }
+        }
+        if (watchThread != null) {
+            watchThread.interrupt();
+            try {
+                watchThread.join(3000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        logger.info("Stopped watching");
+    }
+
+     @Scheduled(cron = "0 * * * * *")
     public void checkForNewChanges() {
         if (newFileChanges.get()) {
             try {
