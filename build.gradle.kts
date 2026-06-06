@@ -2,6 +2,7 @@ plugins {
 	java
 	id("org.springframework.boot") version "4.0.6"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("com.diffplug.spotless") version "8.6.0"
 }
 
 group = "com.ctkcoding"
@@ -38,4 +39,22 @@ tasks.withType<Test> {
 tasks.register<JavaExec>("runDump") {
     mainClass = "com.ctkcoding.rssgen.service.RssServiceDump"
     classpath = sourceSets["main"].runtimeClasspath
+}
+
+spotless {
+    java {
+        googleJavaFormat("1.35.0")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        leadingTabsToSpaces(4)
+        endWithNewline()
+        targetExclude(
+             "src/main/java/com/ctkcoding/rssgen/service/WatcherService.java",
+             "src/test/java/com/ctkcoding/rssgen/service/WatcherServiceTest.java"
+         )
+    }
+}
+
+tasks.named("test") {
+    dependsOn("spotlessCheck")
 }

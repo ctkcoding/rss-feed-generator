@@ -17,24 +17,22 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class ParseController {
 
-    @Autowired
-    ParseService parseService;
+  @Autowired ParseService parseService;
 
-    @Autowired
-    RssService rssService;
+  @Autowired RssService rssService;
 
-    private static final Logger logger = LoggerFactory.getLogger(ParseController.class);
+  private static final Logger logger = LoggerFactory.getLogger(ParseController.class);
 
-    @GetMapping("/parse")
-    public ResponseEntity<String> returnRss() {
+  @GetMapping("/parse")
+  public ResponseEntity<String> returnRss() {
 
-        Show show = parseService.generateShow();
-        try {
-            String path = rssService.writeRss(show);
-            logger.info("RSS feed written to: {}", path);
-        } catch (Exception e) {
-            logger.error("Failed to generate RSS feed: {}", e.getMessage(), e);
-        }
-        return ResponseEntity.ok("Starting a new parse");
+    Show show = parseService.generateShow();
+    try {
+      String path = rssService.writeRss(show);
+      logger.info("RSS feed written to: {}", path);
+    } catch (Exception e) {
+      logger.error("Failed to generate RSS feed: {}", e.getMessage(), e);
     }
+    return ResponseEntity.ok("Starting a new parse");
+  }
 }

@@ -8,23 +8,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @AllArgsConstructor
 @Getter
 public class RssConfig {
-    // todo - use pathRoot user.dir in services where it's needed
-    // private String pathRoot = System.getProperty("user.dir");
+  // todo - use pathRoot user.dir in services where it's needed
+  // private String pathRoot = System.getProperty("user.dir");
 
-    private String artworkDir;
-    private String episodesDir;
-    private String infoDir;
+  private String artworkDir;
+  private String episodesDir;
+  private String infoDir;
 
-    private String rssFileName;
-    private String showFileName;
-    private String episodeFileExtension;
-    private String artworkFileExtension;
-    private String language;
+  private String rssFileName;
+  private String showFileName;
+  private String episodeFileExtension;
+  private String artworkFileExtension;
+  private String language;
 
-    private Boolean extractArtwork;
-    private Boolean fileWatch;
-    private int failureLimit ;
+  private Boolean extractArtwork;
+  private Boolean fileWatch;
+  private int failureLimit;
 
-    // todo - clean
-    private String errorLogFile = "parse-errors.log";
+  // todo - clean
+  private String errorLogFile = "parse-errors.log";
 }

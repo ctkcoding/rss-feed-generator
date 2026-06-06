@@ -1,12 +1,11 @@
 package com.ctkcoding.rssgen.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -14,23 +13,17 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class Show {
 
-    @JsonProperty
-    private String title;
+  @JsonProperty private String title;
 
-    @JsonProperty
-    private String description;
+  @JsonProperty private String description;
 
-    @JsonProperty
-    private String site;
+  @JsonProperty private String site;
 
-    @JsonProperty
-    private String link;
+  @JsonProperty private String link;
 
-    @JsonProperty
-    private String image;
+  @JsonProperty private String image;
 
-    @JsonProperty
-    private String language;
+  @JsonProperty private String language;
 
-    private List<Episode> episodes;
+  private List<Episode> episodes;
 }
