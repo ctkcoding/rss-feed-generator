@@ -297,40 +297,37 @@ class WatcherServiceTest {
       }
     }
 
-    // ============ Happy path: runOnStartup parse =============
+      // ============ Happy path: runOnStartup parse in scheduledParseCheck =============
 
-    @Test
-    void startWatching_runOnStartupEnabled_performsParseOnStartup() {
-        when(rssConfig.getFileWatch()).thenReturn(false);
+     @Test
+    void scheduledParseCheck_runOnStartupEnabled_performsParse() {
         when(rssConfig.getRunOnStartup()).thenReturn(true);
         Show show = Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
         when(parseService.generateShow()).thenReturn(show);
         when(rssService.writeRss(show)).thenReturn("rss.xml");
 
-        watcherService.startWatching();
+        watcherService.scheduledParseCheck();
 
         verify(parseService, times(1)).generateShow();
         verify(rssService, times(1)).writeRss(show);
-        assertEquals(0, watcherService.newFileChanges.get() ? 1 : 0);
+        assertTrue(watcherService.successfulParse.get());
+        assertFalse(watcherService.newFileChanges.get());
         assertNull(watcherService.watchThread);
         assertNull(watcherService.fileWatchService);
-    }
+     }
 
-    @Test
-    void startWatching_runOnStartupDisabled_skipsParseOnStartup() {
-        when(rssConfig.getFileWatch()).thenReturn(false);
+     @Test
+    void scheduledParseCheck_runOnStartupDisabled_skipsParse() {
         when(rssConfig.getRunOnStartup()).thenReturn(false);
 
-        watcherService.startWatching();
+        watcherService.scheduledParseCheck();
 
         verifyNoInteractions(parseService);
         verifyNoInteractions(rssService);
-        assertNull(watcherService.watchThread);
-        assertNull(watcherService.fileWatchService);
-    }
+     }
 
-    @Test
-    void startWatching_runOnStartupFailure_doesNotPreventWatcherStart() {
+     @Test
+    void scheduledParseCheck_runOnStartup_failureDoesNotPreventWatcherStart() {
         when(rssConfig.getFileWatch()).thenReturn(true);
         when(rssConfig.getRunOnStartup()).thenReturn(true);
         when(rssConfig.getEpisodesDir()).thenReturn("episodes");
@@ -339,27 +336,74 @@ class WatcherServiceTest {
 
         try {
             Files.createDirectories(episodesPath);
-        } catch (IOException e) {
+         } catch (IOException e) {
             fail("Failed to create temp directory: " + e.getMessage());
             return;
-        }
+         }
 
         when(parseService.generateShow()).thenThrow(new RuntimeException("Parse failed"));
 
-        try {
-            System.setProperty("user.dir", tempDir.toString());
-            watcherService.startWatching();
-
-            try {
-                verify(parseService, times(1)).generateShow();
-                assertNotNull(watcherService.watchThread);
-                assertTrue(watcherService.watchThread.isDaemon());
-            } finally {
-                watcherService.stopWatching();
-                System.setProperty("user.dir", originalUserDir);
-            }
-        } catch (Exception e) {
+         try {
+             System.setProperty("user.dir", tempDir.toString());
+             watcherService.startWatching();
+             watcherService.scheduledParseCheck();
+             verify(parseService, times(1)).generateShow();
+             assertFalse(watcherService.successfulParse.get());
+             watcherService.stopWatching();
+             System.setProperty("user.dir", originalUserDir);
+           } catch (Exception e) {
             fail("Test failed: " + e.getMessage());
+          }
+       }
+
+       @Test
+    void scheduledParseCheck_runOnStartup_onlyParsesOnce() {
+        when(rssConfig.getRunOnStartup()).thenReturn(true);
+        Show show = Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
+        when(parseService.generateShow()).thenReturn(show);
+        when(rssService.writeRss(show)).thenReturn("rss.xml");
+
+        watcherService.scheduledParseCheck();
+        watcherService.scheduledParseCheck();
+
+        verify(parseService, times(1)).generateShow();
+        verify(rssService, times(1)).writeRss(show);
+        assertTrue(watcherService.successfulParse.get());
+     }
+
+     @Test
+    void scheduledParseCheck_runOnStartup_failureLeavesSuccessfulParseFalse() {
+        when(rssConfig.getRunOnStartup()).thenReturn(true);
+        Show succeedingShow = Show.builder()
+                     .title("Test Show").link("https://podcast.local").language("en-us").build();
+        when(parseService.generateShow()).thenThrow(new RuntimeException("Parse failed"))
+                                         .thenReturn(succeedingShow);
+        when(rssService.writeRss(any())).thenReturn("rss.xml");
+
+        watcherService.scheduledParseCheck();
+
+        assertFalse(watcherService.successfulParse.get());
+        assertEquals(1, watcherService.failureCounter.get());
+        assertFalse(watcherService.newFileChanges.get());
+
+        watcherService.scheduledParseCheck();
+
+        assertTrue(watcherService.successfulParse.get());
+        assertEquals(1, watcherService.failureCounter.get());
         }
-    }
+
+     @Test
+    void scheduledParseCheck_fileChangesAndRunOnStartup_parses() {
+        Show show = Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
+        when(parseService.generateShow()).thenReturn(show);
+        when(rssService.writeRss(show)).thenReturn("rss.xml");
+
+        watcherService.newFileChanges.set(true);
+        watcherService.scheduledParseCheck();
+
+        verify(parseService, times(1)).generateShow();
+        verify(rssService, times(1)).writeRss(show);
+        assertTrue(watcherService.successfulParse.get());
+        assertFalse(watcherService.newFileChanges.get());
+       }
  }
