@@ -2,11 +2,10 @@ package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Show;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +29,20 @@ class WatchServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(rssConfig.getFailureLimit()).thenReturn(5);
-      }
+        lenient().when(rssConfig.getFileWatch()).thenReturn(false);
+        lenient().when(rssConfig.getEpisodesDir()).thenReturn("episodes");
+     }
+
+     @Test
+    void startWatching_directoryNotFound_throwsIllegalStateException() {
+        when(rssConfig.getFileWatch()).thenReturn(true);
+        when(rssConfig.getEpisodesDir()).thenReturn("nonexistent_dir_xyz");
+
+        assertThrows(
+            IllegalStateException.class,
+            () -> watchService.startWatching()
+        );
+     }
 
      @Test
     void checkForNewChanges_noChanges_doesNotCallParseOrRss() {
