@@ -30,12 +30,13 @@ public class RssServiceTest {
     void setUp() {
         rssConfig = new RssConfig(
             null, null, null,
-               "rss.xml", "show.json", ".mp3", ".jpg",
-               "en",
+                "rss.xml", "show.json", ".mp3", ".jpg",
+                "en",
             Boolean.valueOf(false),
             Boolean.valueOf(false),
-             "parse-errors.log"
-            );
+            5,
+              "parse-errors.log"
+              );
         rssService = new RssService(rssConfig);
      }
 
@@ -104,8 +105,8 @@ public class RssServiceTest {
         String filePath = tempDir.resolve("rss.xml").toString();
         rssConfig = new RssConfig(
             null, null, null, filePath, "show.json", ".mp3", ".jpg",
-               "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
-          );
+                 "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
+             );
         rssService = new RssService(rssConfig);
 
         Show show = createTestShow();
@@ -121,7 +122,7 @@ public class RssServiceTest {
         String filePath = tempDir.resolve("channel.xml").toString();
         rssConfig = new RssConfig(
             null, null, null, filePath, "show.json", ".mp3", ".jpg",
-                "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
+                "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
            );
         rssService = new RssService(rssConfig);
 
@@ -145,7 +146,7 @@ public class RssServiceTest {
         String filePath = tempDir.resolve("items.xml").toString();
         rssConfig = new RssConfig(
             null, null, null, filePath, "show.json", ".mp3", ".jpg",
-               "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
+               "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
           );
         rssService = new RssService(rssConfig);
 
@@ -179,7 +180,7 @@ public class RssServiceTest {
         String filePath = tempDir.resolve("itunes_channel.xml").toString();
         rssConfig = new RssConfig(
             null, null, null, filePath, "show.json", ".mp3", ".jpg",
-               "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
+               "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
           );
         rssService = new RssService(rssConfig);
 
@@ -205,7 +206,7 @@ public class RssServiceTest {
         String filePath = tempDir.resolve("itunes_item.xml").toString();
         rssConfig = new RssConfig(
             null, null, null, filePath, "show.json", ".mp3", ".jpg",
-               "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
+               "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
           );
         rssService = new RssService(rssConfig);
 
@@ -230,7 +231,7 @@ public class RssServiceTest {
         String filePath = tempDir.resolve("empty.xml").toString();
         rssConfig = new RssConfig(
             null, null, null, filePath, "show.json", ".mp3", ".jpg",
-               "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
+               "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
           );
         rssService = new RssService(rssConfig);
 
@@ -252,7 +253,7 @@ public class RssServiceTest {
         String unwriteablePath = "/nonexistent/directory/that/cannot/be/accessed/rss.xml";
         rssConfig = new RssConfig(
             null, null, null, unwriteablePath, "show.json", ".mp3", ".jpg",
-               "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
+               "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
            );
         rssService = new RssService(rssConfig);
 
@@ -267,7 +268,7 @@ public class RssServiceTest {
         String filePath = tempDir.resolve("structure.xml").toString();
         rssConfig = new RssConfig(
             null, null, null, filePath, "show.json", ".mp3", ".jpg",
-               "en", Boolean.valueOf(false), Boolean.valueOf(false), "parse-errors.log"
+               "en", Boolean.valueOf(false), Boolean.valueOf(false), 5, "parse-errors.log"
           );
         rssService = new RssService(rssConfig);
 
