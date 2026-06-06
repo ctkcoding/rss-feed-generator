@@ -19,11 +19,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
-public class WatchService {
+public class WatcherService {
     AtomicBoolean newFileChanges = new AtomicBoolean(false);
     AtomicInteger failureCounter = new AtomicInteger(0);
 
-    private static final Logger logger = LoggerFactory.getLogger(WatchService.class);
+    private static final Logger logger = LoggerFactory.getLogger(WatcherService.class);
 
      @Autowired
     ParseService parseService;
@@ -34,9 +34,9 @@ public class WatchService {
      @Autowired
     RssConfig rssConfig;
 
-    private java.nio.file.WatchService fileWatchService;
-    private Thread watchThread;
-    private volatile boolean running = false;
+    WatchService fileWatchService;
+    Thread watchThread;
+    volatile boolean running = false;
 
      @EventListener(ApplicationStartedEvent.class)
     void startWatching() {
@@ -100,7 +100,7 @@ public class WatchService {
         }
     }
 
-    private boolean isEpisodeFile(Path filename) {
+    boolean isEpisodeFile(Path filename) {
         String name = filename.toString().toLowerCase();
         String ext = rssConfig.getEpisodeFileExtension().toLowerCase();
         return ext.isEmpty() || name.endsWith(ext);
