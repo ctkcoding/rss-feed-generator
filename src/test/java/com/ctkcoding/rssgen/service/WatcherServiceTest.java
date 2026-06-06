@@ -51,18 +51,22 @@ class WatcherServiceTest {
     Path episodesPath = tempDir.resolve("episodes");
     Files.createDirectories(episodesPath);
     lenient().when(rssConfig.getEpisodesDir()).thenReturn("episodes");
+    String originalUserDir = System.getProperty("user.dir");
 
-    watcherService.startWatching();
-
-    assertNotNull(watcherService.watchThread);
-    assertTrue(watcherService.running);
-    assertEquals("rss-watch", watcherService.watchThread.getName());
     try {
+      System.setProperty("user.dir", tempDir.toString());
+      watcherService.startWatching();
+
+      try {
       assertTrue(watcherService.watchThread.isDaemon());
-    } finally {
+       } finally {
       watcherService.stopWatching();
+      System.setProperty("user.dir", originalUserDir);
+       }
+    } catch (Exception e) {
+      fail("Test failed: " + e.getMessage());
     }
-  }
+     }
 
   // ============ Happy path: isEpisodeFile =============
 

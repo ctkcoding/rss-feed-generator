@@ -58,12 +58,8 @@ class ParseServiceTest {
   }
 
   private ServiceContext injectConfig(ParseService service, RssConfig mock) {
-    RssService mockRssService = mock(RssService.class);
-    when(mockRssService.writeRss(any(Show.class))).thenReturn("rss.xml");
     try {
       FieldSetter.setField(service, ParseService.class.getDeclaredField("rssConfig"), mock);
-      FieldSetter.setField(
-          service, ParseService.class.getDeclaredField("rssService"), mockRssService);
       System.setProperty("user.dir", tempDir.toString());
     } catch (Exception e) {
       fail("Failed to inject config: " + e.getMessage());
