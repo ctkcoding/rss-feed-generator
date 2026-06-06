@@ -45,6 +45,11 @@ class ParseServiceTest {
   }
 
   private RssConfig createConfig(String infoDir, String episodesDir) {
+    return createConfigWithExtractArtwork(infoDir, episodesDir, false);
+  }
+
+  private RssConfig createConfigWithExtractArtwork(
+      String infoDir, String episodesDir, boolean extractArtwork) {
     RssConfig config = mock(RssConfig.class);
     when(config.getInfoDir()).thenReturn(infoDir);
     when(config.getShowFileName()).thenReturn("show.json");
@@ -52,7 +57,7 @@ class ParseServiceTest {
     when(config.getEpisodeFileExtension()).thenReturn(".mp3");
     when(config.getArtworkFileExtension()).thenReturn(".jpeg");
     when(config.getArtworkDir()).thenReturn("artwork");
-    when(config.getExtractArtwork()).thenReturn(false);
+    when(config.getExtractArtwork()).thenReturn(extractArtwork);
     when(config.getErrorLogFile()).thenReturn("parse-errors.log");
     return config;
   }
@@ -70,7 +75,21 @@ class ParseServiceTest {
   private void copyEpisodes() {
     try {
       Path episodesDir = tempDir.resolve("episodes");
+      Path artworkDir = tempDir.resolve("artwork");
       Files.createDirectories(episodesDir);
+      if (Files.exists(artworkDir)) {
+        Files.list(artworkDir)
+            .forEach(
+                p -> {
+                  try {
+                    Files.delete(p);
+                  } catch (IOException e) {
+                    fail("Failed to clean artwork dir: " + e.getMessage());
+                  }
+                });
+        Files.delete(artworkDir);
+      }
+      Files.createDirectories(artworkDir);
       Path realEpisodesDir = new File("src/test/resources/episodes").toPath();
       if (Files.exists(realEpisodesDir)) {
         Files.list(realEpisodesDir)
@@ -360,6 +379,81 @@ class ParseServiceTest {
         exception
             .getMessage()
             .contains("Failed to parse MP3 metadata for: Totally Missing Episode.mp3"));
+  }
+
+  @Test
+  void parseEpisode_extractArtwork_whenExtractArtworkEnabled_andFileDoesNotExist()
+      throws IOException {
+    loadShowJsonFromResources();
+    copyEpisodes();
+
+    ServiceContext ctx =
+        injectConfig(new ParseService(), createConfigWithExtractArtwork("info", "episodes", true));
+
+    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+
+    assertNotNull(episode);
+    assertNotNull(episode.getImage());
+    Path artworkFile = tempDir.resolve("artwork").resolve("Episode 01.jpeg");
+    assertTrue(Files.exists(artworkFile), "Artwork file should have been extracted");
+    assertTrue(Files.size(artworkFile) > 0, "Artwork file should not be empty");
+  }
+
+  @Test
+  void parseEpisode_skipsArtwork_whenExtractArtworkDisabled() throws IOException {
+    loadShowJsonFromResources();
+    copyEpisodes();
+
+    ServiceContext ctx =
+        injectConfig(new ParseService(), createConfigWithExtractArtwork("info", "episodes", false));
+
+    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+
+    assertNotNull(episode);
+    Path artworkFile = tempDir.resolve("artwork").resolve("Episode 01.jpeg");
+    assertFalse(Files.exists(artworkFile), "Artwork file should not be extracted when disabled");
+  }
+
+  @Test
+  void parseEpisode_skipsArtwork_whenFileAlreadyExists() throws IOException, InterruptedException {
+    loadShowJsonFromResources();
+    copyEpisodes();
+
+    Path artworkFile = tempDir.resolve("artwork").resolve("Episode 01.jpeg");
+    Files.write(artworkFile, new byte[] {1, 2, 3});
+    long originalLastModified = Files.getLastModifiedTime(artworkFile).toMillis();
+    Thread.sleep(100);
+
+    ServiceContext ctx =
+        injectConfig(new ParseService(), createConfigWithExtractArtwork("info", "episodes", true));
+
+    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+
+    assertNotNull(episode);
+    assertTrue(Files.exists(artworkFile), "Artwork file should still exist");
+    long newLastModified = Files.getLastModifiedTime(artworkFile).toMillis();
+    assertEquals(
+        originalLastModified, newLastModified, "Artwork file should not have been overwritten");
+  }
+
+  @Test
+  void parseEpisode_logsErrorWhenMimeMismatch() throws IOException {
+    loadShowJsonFromResources();
+    copyEpisodes();
+
+    RssConfig config = createConfigWithExtractArtwork("info", "episodes", true);
+    when(config.getArtworkFileExtension()).thenReturn(".png");
+    ServiceContext ctx = injectConfig(new ParseService(), config);
+
+    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+
+    assertNotNull(episode);
+    Path artworkFile = tempDir.resolve("artwork").resolve("Episode 01.png");
+    assertFalse(Files.exists(artworkFile), "Artwork should not be written due to MIME mismatch");
+    Path errorLogFile = tempDir.resolve("parse-errors.log");
+    assertTrue(Files.exists(errorLogFile), "Error log should be written on MIME mismatch");
+    String errorContent = Files.readString(errorLogFile);
+    assertTrue(errorContent.contains("MIME type"), "Error log should mention MIME mismatch");
   }
 
   // ============ helpers ============
