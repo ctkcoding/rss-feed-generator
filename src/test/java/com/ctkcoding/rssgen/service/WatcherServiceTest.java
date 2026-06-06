@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Show;
+import java.io.IOException;
 import java.nio.file.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,12 +27,13 @@ class WatcherServiceTest {
 
   @TempDir Path tempDir;
 
-  @BeforeEach
-  void setUp() {
-    lenient().when(rssConfig.getFailureLimit()).thenReturn(5);
-    lenient().when(rssConfig.getFileWatch()).thenReturn(false);
-    lenient().when(rssConfig.getEpisodesDir()).thenReturn("episodes");
-  }
+    @BeforeEach
+   void setUp() {
+     lenient().when(rssConfig.getFailureLimit()).thenReturn(5);
+     lenient().when(rssConfig.getFileWatch()).thenReturn(false);
+     lenient().when(rssConfig.getEpisodesDir()).thenReturn("episodes");
+     lenient().when(rssConfig.getRunOnStartup()).thenReturn(false);
+    }
 
   // ============ Happy path: startWatching =============
 
@@ -127,9 +129,9 @@ class WatcherServiceTest {
   // ============ Happy path: checkForNewChanges =========
 
   @Test
-  void checkForNewChanges_noChanges_doesNotCallParseOrRss() {
+  void scheduledParseCheck_doesNotCallParseOrRss() {
     watcherService.newFileChanges.set(false);
-    watcherService.checkForNewChanges();
+    watcherService.scheduledParseCheck();
 
     verifyNoInteractions(parseService);
     verifyNoInteractions(rssService);
@@ -137,7 +139,7 @@ class WatcherServiceTest {
   }
 
   @Test
-  void checkForNewChanges_withChanges_succeeds_resetsFlag() {
+  void scheduledParseCheck_succeeds_resetsFlag() {
     Show show =
         Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
 
@@ -145,7 +147,7 @@ class WatcherServiceTest {
     when(rssService.writeRss(show)).thenReturn("rss.xml");
 
     watcherService.newFileChanges.set(true);
-    watcherService.checkForNewChanges();
+    watcherService.scheduledParseCheck();
 
     verify(parseService, times(1)).generateShow();
     verify(rssService, times(1)).writeRss(show);
@@ -154,7 +156,7 @@ class WatcherServiceTest {
   }
 
   @Test
-  void checkForNewChanges_rssFailure_incrementsCounter_keepsFlagTrue() {
+  void scheduledParseCheck_rssFailure_incrementsCounter_keepsFlagTrue() {
     when(parseService.generateShow())
         .thenReturn(
             Show.builder()
@@ -165,14 +167,14 @@ class WatcherServiceTest {
     when(rssService.writeRss(any())).thenThrow(new RuntimeException("Write failed"));
 
     watcherService.newFileChanges.set(true);
-    watcherService.checkForNewChanges();
+    watcherService.scheduledParseCheck();
 
     assertEquals(1, watcherService.failureCounter.get());
     assertTrue(watcherService.newFileChanges.get());
   }
 
   @Test
-  void checkForNewChanges_failureLimitExceeded_resetsFlag_noMoreRetries() {
+  void scheduledParseCheck_failureLimitExceeded_resetsFlag_noMoreRetries() {
     Show show =
         Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
     when(parseService.generateShow()).thenReturn(show);
@@ -180,14 +182,14 @@ class WatcherServiceTest {
 
     watcherService.newFileChanges.set(true);
     watcherService.failureCounter.set(5);
-    watcherService.checkForNewChanges();
+    watcherService.scheduledParseCheck();
 
     assertEquals(6, watcherService.failureCounter.get());
     assertFalse(watcherService.newFileChanges.get());
   }
 
   @Test
-  void checkForNewChanges_counterEqualToLimit_doesNotStopRetries() {
+  void scheduledParseCheck_counterEqualToLimit_doesNotStopRetries() {
     Show show =
         Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
     when(parseService.generateShow()).thenReturn(show);
@@ -195,14 +197,14 @@ class WatcherServiceTest {
 
     watcherService.newFileChanges.set(true);
     watcherService.failureCounter.set(4);
-    watcherService.checkForNewChanges();
+    watcherService.scheduledParseCheck();
 
     assertTrue(watcherService.newFileChanges.get());
     assertEquals(5, watcherService.failureCounter.get());
   }
 
   @Test
-  void checkForNewChanges_failureThenSuccess_resetsFlag_keepsCounter() {
+  void scheduledParseCheck_failureThenSuccess_resetsFlag_keepsCounter() {
     Show show =
         Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
 
@@ -212,14 +214,14 @@ class WatcherServiceTest {
         .thenReturn("rss.xml");
 
     watcherService.newFileChanges.set(true);
-    watcherService.checkForNewChanges();
+    watcherService.scheduledParseCheck();
 
     int counterAfterFailure = watcherService.failureCounter.get();
     assertEquals(1, counterAfterFailure);
     assertTrue(watcherService.newFileChanges.get());
 
     watcherService.newFileChanges.set(true);
-    watcherService.checkForNewChanges();
+    watcherService.scheduledParseCheck();
 
     int counterAfterSuccess = watcherService.failureCounter.get();
     assertEquals(1, counterAfterSuccess);
@@ -286,12 +288,78 @@ class WatcherServiceTest {
 
       assertFalse(
           watcherService.newFileChanges.get(), "Flag should not be set for non-episode file");
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      fail("Test interrupted");
-    } finally {
-      watcherService.stopWatching();
-      System.setProperty("user.dir", originalUserDir);
+      } catch (InterruptedException e) {
+       Thread.currentThread().interrupt();
+       fail("Test interrupted");
+      } finally {
+       watcherService.stopWatching();
+       System.setProperty("user.dir", originalUserDir);
+      }
     }
-  }
-}
+
+    // ============ Happy path: runOnStartup parse =============
+
+    @Test
+    void startWatching_runOnStartupEnabled_performsParseOnStartup() {
+        when(rssConfig.getFileWatch()).thenReturn(false);
+        when(rssConfig.getRunOnStartup()).thenReturn(true);
+        Show show = Show.builder().title("Test Show").link("https://podcast.local").language("en-us").build();
+        when(parseService.generateShow()).thenReturn(show);
+        when(rssService.writeRss(show)).thenReturn("rss.xml");
+
+        watcherService.startWatching();
+
+        verify(parseService, times(1)).generateShow();
+        verify(rssService, times(1)).writeRss(show);
+        assertEquals(0, watcherService.newFileChanges.get() ? 1 : 0);
+        assertNull(watcherService.watchThread);
+        assertNull(watcherService.fileWatchService);
+    }
+
+    @Test
+    void startWatching_runOnStartupDisabled_skipsParseOnStartup() {
+        when(rssConfig.getFileWatch()).thenReturn(false);
+        when(rssConfig.getRunOnStartup()).thenReturn(false);
+
+        watcherService.startWatching();
+
+        verifyNoInteractions(parseService);
+        verifyNoInteractions(rssService);
+        assertNull(watcherService.watchThread);
+        assertNull(watcherService.fileWatchService);
+    }
+
+    @Test
+    void startWatching_runOnStartupFailure_doesNotPreventWatcherStart() {
+        when(rssConfig.getFileWatch()).thenReturn(true);
+        when(rssConfig.getRunOnStartup()).thenReturn(true);
+        when(rssConfig.getEpisodesDir()).thenReturn("episodes");
+        Path episodesPath = tempDir.resolve("episodes");
+        String originalUserDir = System.getProperty("user.dir");
+
+        try {
+            Files.createDirectories(episodesPath);
+        } catch (IOException e) {
+            fail("Failed to create temp directory: " + e.getMessage());
+            return;
+        }
+
+        when(parseService.generateShow()).thenThrow(new RuntimeException("Parse failed"));
+
+        try {
+            System.setProperty("user.dir", tempDir.toString());
+            watcherService.startWatching();
+
+            try {
+                verify(parseService, times(1)).generateShow();
+                assertNotNull(watcherService.watchThread);
+                assertTrue(watcherService.watchThread.isDaemon());
+            } finally {
+                watcherService.stopWatching();
+                System.setProperty("user.dir", originalUserDir);
+            }
+        } catch (Exception e) {
+            fail("Test failed: " + e.getMessage());
+        }
+    }
+ }

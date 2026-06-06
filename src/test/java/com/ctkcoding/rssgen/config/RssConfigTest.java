@@ -26,6 +26,7 @@ class RssConfigTest {
     assertEquals(".jpeg", rssConfig.getArtworkFileExtension());
     assertEquals(false, rssConfig.getExtractArtwork());
     assertEquals(false, rssConfig.getFileWatch());
+    assertEquals(false, rssConfig.getRunOnStartup());
     assertEquals("en-us", rssConfig.getLanguage());
     assertEquals("parse-errors.log", rssConfig.getErrorLogFile());
   }

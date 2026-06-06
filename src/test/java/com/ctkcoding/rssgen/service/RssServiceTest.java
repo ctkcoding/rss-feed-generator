@@ -38,6 +38,7 @@ public class RssServiceTest {
             "en",
             Boolean.valueOf(false),
             Boolean.valueOf(false),
+            Boolean.valueOf(false),
             5,
             "parse-errors.log");
     rssService = new RssService(rssConfig);
@@ -130,6 +131,7 @@ public class RssServiceTest {
             "en",
             Boolean.valueOf(false),
             Boolean.valueOf(false),
+            Boolean.valueOf(false),
             5,
             "parse-errors.log");
     rssService = new RssService(rssConfig);
@@ -155,6 +157,7 @@ public class RssServiceTest {
             ".mp3",
             ".jpg",
             "en",
+            Boolean.valueOf(false),
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
@@ -189,6 +192,7 @@ public class RssServiceTest {
             ".mp3",
             ".jpg",
             "en",
+            Boolean.valueOf(false),
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
@@ -236,6 +240,7 @@ public class RssServiceTest {
             "en",
             Boolean.valueOf(false),
             Boolean.valueOf(false),
+            Boolean.valueOf(false),
             5,
             "parse-errors.log");
     rssService = new RssService(rssConfig);
@@ -275,6 +280,7 @@ public class RssServiceTest {
             "en",
             Boolean.valueOf(false),
             Boolean.valueOf(false),
+            Boolean.valueOf(false),
             5,
             "parse-errors.log");
     rssService = new RssService(rssConfig);
@@ -311,6 +317,7 @@ public class RssServiceTest {
             "en",
             Boolean.valueOf(false),
             Boolean.valueOf(false),
+            Boolean.valueOf(false),
             5,
             "parse-errors.log");
     rssService = new RssService(rssConfig);
@@ -344,6 +351,7 @@ public class RssServiceTest {
             "en",
             Boolean.valueOf(false),
             Boolean.valueOf(false),
+            Boolean.valueOf(false),
             5,
             "parse-errors.log");
     rssService = new RssService(rssConfig);
@@ -368,6 +376,7 @@ public class RssServiceTest {
             ".mp3",
             ".jpg",
             "en",
+            Boolean.valueOf(false),
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,

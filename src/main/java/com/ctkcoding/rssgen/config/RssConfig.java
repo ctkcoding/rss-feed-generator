@@ -23,6 +23,7 @@ public class RssConfig {
 
   private Boolean extractArtwork;
   private Boolean fileWatch;
+  private Boolean runOnStartup;
   private int failureLimit;
 
   // todo - clean
