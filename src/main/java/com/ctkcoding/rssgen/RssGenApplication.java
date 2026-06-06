@@ -10,8 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class RssGenApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(RssGenApplication.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(RssGenApplication.class, args);
+  }
 }

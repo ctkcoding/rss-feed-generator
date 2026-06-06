@@ -1,47 +1,44 @@
 package com.ctkcoding.rssgen.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.util.List;
-
 @Slf4j
 @Service
 public class FileService {
 
-    @Getter
-    private Path basePath = Path.of(System.getProperty("user.dir"));
+  @Getter private Path basePath = Path.of(System.getProperty("user.dir"));
 
-    private List<String> allowedSubpaths = List.of("artwork", "episodes", "");
+  private List<String> allowedSubpaths = List.of("artwork", "episodes", "");
 
-    private static final Logger logger = LoggerFactory.getLogger(FileService.class);
+  private static final Logger logger = LoggerFactory.getLogger(FileService.class);
 
-    public byte[] getFile(String extraPath, String file) throws IOException {
-        if (!allowedSubpaths.contains(extraPath)) {
-            throw new IllegalArgumentException("Path traversal attempt detected");
-         }
+  public byte[] getFile(String extraPath, String file) throws IOException {
+    if (!allowedSubpaths.contains(extraPath)) {
+      throw new IllegalArgumentException("Path traversal attempt detected");
+    }
 
-        Path filePath = normalizePath(basePath, extraPath, file);
-        logger.info("resolved full file path: " + filePath);
+    Path filePath = normalizePath(basePath, extraPath, file);
+    logger.info("resolved full file path: " + filePath);
 
-        return Files.readAllBytes(filePath);
-     }
+    return Files.readAllBytes(filePath);
+  }
 
-     private Path normalizePath(Path base, String extraPath, String file) {
-        Path normalizedBase = base.toAbsolutePath().normalize();
-        Path resolvedPath = base.resolve(extraPath).resolve(file).normalize();
+  private Path normalizePath(Path base, String extraPath, String file) {
+    Path normalizedBase = base.toAbsolutePath().normalize();
+    Path resolvedPath = base.resolve(extraPath).resolve(file).normalize();
 
-         if (!resolvedPath.startsWith(normalizedBase)) {
-             throw new IllegalArgumentException("Path traversal attempt detected");
-           }
+    if (!resolvedPath.startsWith(normalizedBase)) {
+      throw new IllegalArgumentException("Path traversal attempt detected");
+    }
 
-         return resolvedPath;
-      }
+    return resolvedPath;
+  }
 }

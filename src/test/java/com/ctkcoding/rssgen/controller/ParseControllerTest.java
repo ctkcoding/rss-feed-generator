@@ -1,4 +1,3 @@
 package com.ctkcoding.rssgen.controller;
 
-public class ParseControllerTest {
-}
+public class ParseControllerTest {}
