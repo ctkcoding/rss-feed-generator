@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Show;
+import com.ctkcoding.rssgen.service.ErrorLogHandler;
 import java.io.IOException;
 import java.nio.file.*;
 import org.junit.jupiter.api.*;
@@ -17,13 +18,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class WatcherServiceTest {
 
-  @Mock ParseService parseService;
+   @Mock ParseService parseService;
 
-  @Mock RssService rssService;
+   @Mock RssService rssService;
 
-  @Mock RssConfig rssConfig;
+   @Mock RssConfig rssConfig;
 
-  @InjectMocks WatcherService watcherService;
+   @Mock ErrorLogHandler errorLogHandler;
+
+   @InjectMocks WatcherService watcherService;
 
   @TempDir Path tempDir;
 
