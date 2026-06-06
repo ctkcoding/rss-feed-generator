@@ -19,8 +19,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class WatcherService {
-  AtomicBoolean newFileChanges = new AtomicBoolean(false);
-  AtomicInteger failureCounter = new AtomicInteger(0);
+    AtomicBoolean newFileChanges = new AtomicBoolean(false);
+    AtomicInteger failureCounter = new AtomicInteger(0);
+    AtomicBoolean successfulParse = new AtomicBoolean(false);
 
   private static final Logger logger = LoggerFactory.getLogger(WatcherService.class);
 
@@ -34,12 +35,12 @@ public class WatcherService {
   Thread watchThread;
   volatile boolean running = false;
 
-  @EventListener(ApplicationStartedEvent.class)
-  void startWatching() {
-    if (!Boolean.TRUE.equals(rssConfig.getFileWatch())) {
-      logger.info("File watching is disabled");
-      return;
-    }
+    @EventListener(ApplicationStartedEvent.class)
+    void startWatching() {
+     if (!Boolean.TRUE.equals(rssConfig.getFileWatch())) {
+       logger.info("File watching is disabled");
+       return;
+     }
 
     Path episodesDir = Path.of(System.getProperty("user.dir")).resolve(rssConfig.getEpisodesDir());
 
@@ -125,26 +126,27 @@ public class WatcherService {
   }
 
   @Scheduled(cron = "0 * * * * *")
-  public void checkForNewChanges() {
-    if (newFileChanges.get()) {
-      try {
-        logger.info("New file changes found. Kicking off parse and write");
-        Show show = parseService.generateShow();
-        String path = rssService.writeRss(show);
-        logger.info("RSS feed written to: {}", path);
-        newFileChanges.set(false);
-      } catch (Exception e) {
-        logger.error("Failed to generate RSS feed: {}", e.getMessage(), e);
-        failureCounter.incrementAndGet();
-        if (failureCounter.get() > rssConfig.getFailureLimit()) {
-          newFileChanges.set(false);
-          logger.error(
-              "Reached RSS feed generation failure limit of {}. Ending retries.",
-              rssConfig.getFailureLimit());
-        }
+  public void scheduledParseCheck() {
+          if (newFileChanges.get() || (Boolean.TRUE.equals(rssConfig.getRunOnStartup()) && !successfulParse.get())) {
+              try {
+                  logger.info("New file changes found. Kicking off parse and write");
+                  Show show = parseService.generateShow();
+                  String path = rssService.writeRss(show);
+                  logger.info("RSS feed written to: {}", path);
+                  newFileChanges.set(false);
+                  successfulParse.set(true);
+              } catch (Exception e) {
+                  logger.error("Failed to generate RSS feed: {}", e.getMessage(), e);
+                  failureCounter.incrementAndGet();
+                  if (failureCounter.get() > rssConfig.getFailureLimit()) {
+                      newFileChanges.set(false);
+                      logger.error(
+                              "Reached RSS feed generation failure limit of {}. Ending retries.",
+                              rssConfig.getFailureLimit());
+                  }
+              }
+          } else {
+              logger.info("No new changes found to files. Napping for a minute!");
+          }
       }
-    } else {
-      logger.info("No new changes found to files. Napping for a minute!");
-    }
-  }
 }
