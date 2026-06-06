@@ -23,6 +23,7 @@ public class RssConfig {
 
     private Boolean extractArtwork;
     private Boolean fileWatch;
+    private int failureLimit ;
 
     // todo - clean
     private String errorLogFile = "parse-errors.log";
