@@ -8,9 +8,6 @@ import java.nio.file.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,13 +20,21 @@ public class WatcherService {
     AtomicInteger failureCounter = new AtomicInteger(0);
     AtomicBoolean successfulParse = new AtomicBoolean(false);
 
-  private static final Logger logger = LoggerFactory.getLogger(WatcherService.class);
+  private final ParseService parseService;
+  private final RssService rssService;
+  private final RssConfig rssConfig;
+  private final ErrorLogHandler errorLogHandler;
 
-  @Autowired ParseService parseService;
-
-  @Autowired RssService rssService;
-
-  @Autowired RssConfig rssConfig;
+    WatcherService(
+        ParseService parseService,
+        RssService rssService,
+        RssConfig rssConfig,
+        ErrorLogHandler errorLogHandler) {
+      this.parseService = parseService;
+      this.rssService = rssService;
+      this.rssConfig = rssConfig;
+      this.errorLogHandler = errorLogHandler;
+       }
 
   WatchService fileWatchService;
   Thread watchThread;
@@ -38,7 +43,7 @@ public class WatcherService {
     @EventListener(ApplicationStartedEvent.class)
     void startWatching() {
      if (!Boolean.TRUE.equals(rssConfig.getFileWatch())) {
-       logger.info("File watching is disabled");
+       log.info("File watching is disabled");
        return;
      }
 
@@ -63,9 +68,9 @@ public class WatcherService {
       watchThread = new Thread(this::watchLoop, "rss-watch");
       watchThread.setDaemon(true);
       watchThread.start();
-      logger.info("Started watching: {}", episodesDir);
+      log.info("Started watching: {}", episodesDir);
     } catch (IOException e) {
-      logger.error("Failed to create file watcher for: {}", episodesDir, e);
+      log.error("Failed to create file watcher for: {}", episodesDir, e);
       throw new RuntimeException("Failed to start file watcher", e);
     }
   }
@@ -84,7 +89,7 @@ public class WatcherService {
             continue;
           }
 
-          logger.info("File change detected: {} ({})", filename, event.kind());
+          log.info("File change detected: {} ({})", filename, event.kind());
           newFileChanges.set(true);
         }
         key.reset();
@@ -92,7 +97,7 @@ public class WatcherService {
         Thread.currentThread().interrupt();
         break;
       } catch (Exception e) {
-        logger.error("Watch loop error: {}", e.getMessage(), e);
+        log.error("Watch loop error: {}", e.getMessage(), e);
         break;
       }
     }
@@ -111,7 +116,7 @@ public class WatcherService {
       try {
         fileWatchService.close();
       } catch (IOException e) {
-        logger.warn("Failed to close file watcher", e);
+        log.warn("Failed to close file watcher", e);
       }
     }
     if (watchThread != null) {
@@ -122,31 +127,31 @@ public class WatcherService {
         Thread.currentThread().interrupt();
       }
     }
-    logger.info("Stopped watching");
+    log.info("Stopped watching");
   }
 
   @Scheduled(cron = "0 * * * * *")
   public void scheduledParseCheck() {
           if (newFileChanges.get() || (Boolean.TRUE.equals(rssConfig.getRunOnStartup()) && !successfulParse.get())) {
               try {
-                  logger.info("New file changes found. Kicking off parse and write");
+                  log.info("New file changes found. Kicking off parse and write");
                   Show show = parseService.generateShow();
                   String path = rssService.writeRss(show);
-                  logger.info("RSS feed written to: {}", path);
+                  log.info("RSS feed written to: {}", path);
                   newFileChanges.set(false);
                   successfulParse.set(true);
               } catch (Exception e) {
-                  logger.error("Failed to generate RSS feed: {}", e.getMessage(), e);
+                  log.error("Failed to generate RSS feed: {}", e.getMessage(), e);
                   failureCounter.incrementAndGet();
                   if (failureCounter.get() > rssConfig.getFailureLimit()) {
                       newFileChanges.set(false);
-                      logger.error(
+                      log.error(
                               "Reached RSS feed generation failure limit of {}. Ending retries.",
                               rssConfig.getFailureLimit());
                   }
               }
           } else {
-              logger.info("No new changes found to files. Napping for a minute!");
+              log.info("No new changes found to files. Napping for a minute!");
           }
       }
 }

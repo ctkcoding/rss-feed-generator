@@ -33,9 +33,11 @@ public class RssService {
   private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
 
   private final RssConfig rssConfig;
+  private final ErrorLogHandler errorLogHandler;
 
-  public RssService(RssConfig rssConfig) {
+  RssService(RssConfig rssConfig, ErrorLogHandler errorLogHandler) {
     this.rssConfig = rssConfig;
+    this.errorLogHandler = errorLogHandler;
   }
 
   public String writeRss(Show show) {
@@ -55,6 +57,8 @@ public class RssService {
       logger.info("Wrote RSS feed to {}", outputPath);
       return outputPath.toString();
     } catch (IOException | FeedException e) {
+      errorLogHandler.writeError(
+          ParseErrorReason.RSS_OUTPUT_WRITE_FAILED, rssConfig.getRssFileName(), e.getMessage());
       logger.error("Failed to write RSS feed to {}: {}", outputPath, e.getMessage(), e);
       throw new RuntimeException("Failed to write RSS feed", e);
     }

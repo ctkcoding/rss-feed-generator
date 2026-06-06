@@ -1,6 +1,8 @@
 package com.ctkcoding.rssgen.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Episode;
@@ -16,11 +18,13 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
 public class RssServiceTest {
 
   private RssConfig rssConfig;
   private RssService rssService;
+  private ErrorLogHandler mockErrorLogHandler;
 
   @TempDir Path tempDir;
 
@@ -41,7 +45,17 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    mockErrorLogHandler = Mockito.mock(ErrorLogHandler.class);
+    Mockito.doNothing().when(mockErrorLogHandler).writeError(any(), anyString(), anyString());
+    Mockito.doNothing().when(mockErrorLogHandler).writeSummary(anyInt(), anyInt());
+    rssService = new RssService(rssConfig, mockErrorLogHandler);
+  }
+
+  private RssService createService(RssConfig config) {
+    ErrorLogHandler handler = Mockito.mock(ErrorLogHandler.class);
+    Mockito.doNothing().when(handler).writeError(any(), anyString(), anyString());
+    Mockito.doNothing().when(handler).writeSummary(anyInt(), anyInt());
+    return new RssService(config, handler);
   }
 
   private Show createTestShow() {
@@ -134,7 +148,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show = createTestShow();
     String resultPath = rssService.writeRss(show);
@@ -162,7 +176,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show = createTestShow();
     rssService.writeRss(show);
@@ -197,7 +211,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show = createTestShow();
     rssService.writeRss(show);
@@ -243,7 +257,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show = createTestShow();
     rssService.writeRss(show);
@@ -283,7 +297,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show = createTestShow();
     rssService.writeRss(show);
@@ -320,7 +334,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show =
         Show.builder()
@@ -354,7 +368,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show = createTestShow();
 
@@ -381,7 +395,7 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             5,
             "parse-errors.log");
-    rssService = new RssService(rssConfig);
+    rssService = createService(rssConfig);
 
     Show show = createTestShow();
     rssService.writeRss(show);

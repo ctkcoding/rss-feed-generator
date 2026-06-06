@@ -26,6 +26,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class ParseService {
+
   private static final Logger logger = LoggerFactory.getLogger(ParseService.class);
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -36,10 +37,32 @@ public class ParseService {
           "image/png", new String[] {".png"},
           "image/gif", new String[] {".gif"});
 
-  @Autowired private RssConfig rssConfig;
+  private final RssConfig rssConfig;
+  private final ErrorLogHandler errorLogHandler;
+
+  @Autowired
+  ParseService(RssConfig rssConfig, ErrorLogHandler errorLogHandler) {
+    this.rssConfig = rssConfig;
+    this.errorLogHandler = errorLogHandler;
+  }
 
   public Show generateShow() {
-    Show show = parseShow();
+    Show show;
+    errorLogHandler.startParseRun();
+    try {
+      show = parseShow();
+    } catch (Exception e) {
+      String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+      String showFileName = rssConfig.getShowFileName();
+      errorLogHandler.writeError(
+          e.getCause() instanceof java.io.FileNotFoundException
+              ? ParseErrorReason.SHOW_CONFIG_FILE_NOT_FOUND
+              : ParseErrorReason.SHOW_CONFIG_INVALID_JSON,
+          showFileName,
+          detail);
+      logger.error("Failed to parse show file, aborting generation", e);
+      throw new RuntimeException("Failed to parse show file", e);
+    }
 
     String episodesDirPath = rssConfig.getEpisodesDir();
     Path episodesDir = Path.of(System.getProperty("user.dir")).resolve(episodesDirPath);
@@ -66,41 +89,26 @@ public class ParseService {
 
     if (mp3Files.isEmpty()) {
       show = show.toBuilder().episodes(new java.util.ArrayList<>()).build();
+      errorLogHandler.writeSummary(0, 0);
       return show;
     }
 
     List<Episode> episodes = new java.util.ArrayList<>();
-    List<String> errors = new java.util.ArrayList<>();
+    int failureCount = 0;
     for (File mp3File : mp3Files) {
       String filename = mp3File.getName();
       try {
         Episode episode = parseEpisode(filename, show.getLink());
         episodes.add(episode);
       } catch (Exception e) {
-        logger.warn("Could not parse episode {}, skipping: {}", filename, e.getMessage());
-        errors.add(filename + " - " + e.getMessage());
+        failureCount++;
+        String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        logger.warn("Could not parse episode {}, skipping: {}", filename, detail);
+        errorLogHandler.writeError(ParseErrorReason.EPISODE_MP3_PARSE_ERROR, filename, detail);
       }
     }
 
-    if (!errors.isEmpty()) {
-      String basePath = System.getProperty("user.dir");
-      String errorLogPath = basePath + "/" + rssConfig.getErrorLogFile();
-      try {
-        Path errorLogFile = Path.of(errorLogPath);
-        Path errorLogDir = errorLogFile.getParent();
-        if (errorLogDir != null) {
-          Files.createDirectories(errorLogDir);
-        }
-        Files.writeString(
-            errorLogFile,
-            String.join(System.lineSeparator(), errors) + System.lineSeparator(),
-            java.nio.file.StandardOpenOption.CREATE,
-            java.nio.file.StandardOpenOption.APPEND);
-        logger.info("Wrote {} parsing errors to {}", errors.size(), errorLogPath);
-      } catch (IOException e) {
-        logger.error("Failed to write error log: {}", errorLogPath, e);
-      }
-    }
+    errorLogHandler.writeSummary(episodes.size(), failureCount);
 
     show = show.toBuilder().episodes(episodes).build();
 
@@ -122,9 +130,26 @@ public class ParseService {
 
       return show;
     } catch (Exception e) {
+      String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+      String showFileName = rssConfig.getShowFileName();
+      String rootCause = getRootCause(e);
+      if (rootCause != null && rootCause.contains("No such file")) {
+        errorLogHandler.writeError(
+            ParseErrorReason.SHOW_CONFIG_FILE_NOT_FOUND, showFileName, e.getMessage());
+      } else {
+        errorLogHandler.writeError(ParseErrorReason.SHOW_CONFIG_INVALID_JSON, showFileName, detail);
+      }
       logger.error("Failed to parse show file", e);
       throw new RuntimeException("Failed to parse show file", e);
     }
+  }
+
+  private String getRootCause(Throwable e) {
+    Throwable cause = e;
+    while (cause.getCause() != null && cause.getCause() != cause) {
+      cause = cause.getCause();
+    }
+    return cause.getMessage();
   }
 
   public Episode parseEpisode(String episodeFile, String showLink) {
@@ -144,7 +169,13 @@ public class ParseService {
       pubDate =
           LocalDateTime.ofInstant(
               java.time.Instant.ofEpochMilli(lastModified), ZoneId.systemDefault());
+    } catch (IOException e) {
+      errorLogHandler.writeError(
+          ParseErrorReason.EPISODE_PUB_DATE_MISSING, episodeFile, e.getMessage());
+      throw new RuntimeException("Failed to determine publication date: " + episodeFile, e);
+    }
 
+    try {
       Mp3File mp3File = new Mp3File(filePath.toFile());
       duration = (int) mp3File.getLengthInSeconds();
       if (mp3File.hasId3v2Tag()) {
@@ -175,10 +206,10 @@ public class ParseService {
               String mime = tag.getAlbumImageMimeType();
               String[] acceptedExtensions = MIME_TYPE_MAPPING.getOrDefault(mime, new String[] {});
               if (acceptedExtensions.length == 0) {
-                String errorMsg =
-                    episodeFile + " - No matching extension found for MIME type: " + mime;
-                logger.warn(errorMsg);
-                appendToErrorLog(errorMsg);
+                errorLogHandler.writeError(
+                    ParseErrorReason.ARTWORK_UNSUPPORTED_MIME,
+                    episodeFile,
+                    "MIME type " + mime + " has no configured extension");
               } else {
                 String configExt = rssConfig.getArtworkFileExtension();
                 if (extMatchesMimeType(configExt, mime, acceptedExtensions)) {
@@ -186,21 +217,18 @@ public class ParseService {
                     byte[] imageData = tag.getAlbumImage();
                     Files.write(artworkFilePath, imageData);
                   } catch (IOException e) {
-                    String errorMsg =
-                        episodeFile + " - Failed to write artwork file: " + e.getMessage();
-                    logger.warn(errorMsg, e);
-                    appendToErrorLog(errorMsg);
+                    errorLogHandler.writeError(
+                        ParseErrorReason.ARTWORK_WRITE_FAILED, episodeFile, e.getMessage());
                   }
                 } else {
-                  String errorMsg =
-                      episodeFile
-                          + " - MIME type '"
+                  errorLogHandler.writeError(
+                      ParseErrorReason.ARTWORK_MIME_MISMATCH,
+                      episodeFile,
+                      "MIME type '"
                           + mime
                           + "' doesn't match configured extension '"
                           + configExt
-                          + "'";
-                  logger.warn(errorMsg);
-                  appendToErrorLog(errorMsg);
+                          + "'");
                 }
               }
             }
@@ -208,8 +236,9 @@ public class ParseService {
         }
       }
     } catch (IOException | UnsupportedTagException | InvalidDataException e) {
-      logger.warn("Could not read MP3 metadata for: {}", episodeFile, e);
-      throw new RuntimeException("Failed to parse MP3 metadata for: " + episodeFile, e);
+      String detail = e.getClass().getSimpleName() + " - " + e.getMessage();
+      errorLogHandler.writeError(ParseErrorReason.EPISODE_MP3_PARSE_ERROR, episodeFile, detail);
+      throw new RuntimeException("Failed to parse MP3 metadata: " + episodeFile, e);
     }
 
     String filenameNoExt = episodeFile;
@@ -231,7 +260,8 @@ public class ParseService {
     try {
       fileSize = Files.size(filePath);
     } catch (IOException e) {
-      logger.warn("Could not determine file size for: {}", episodeFile, e);
+      errorLogHandler.writeError(
+          ParseErrorReason.EPISODE_FILE_SIZE_UNKNOWN, episodeFile, e.getMessage());
     }
 
     return Episode.builder()
@@ -245,25 +275,6 @@ public class ParseService {
         .enclosureLength(fileSize)
         .duration(duration)
         .build();
-  }
-
-  private void appendToErrorLog(String line) {
-    String basePath = System.getProperty("user.dir");
-    String errorLogPath = basePath + "/" + rssConfig.getErrorLogFile();
-    try {
-      Path errorLogFile = Path.of(errorLogPath);
-      Path errorLogDir = errorLogFile.getParent();
-      if (errorLogDir != null) {
-        Files.createDirectories(errorLogDir);
-      }
-      Files.writeString(
-          errorLogFile,
-          line + System.lineSeparator(),
-          java.nio.file.StandardOpenOption.CREATE,
-          java.nio.file.StandardOpenOption.APPEND);
-    } catch (IOException e) {
-      logger.error("Failed to write error log: {}", errorLogPath, e);
-    }
   }
 
   private boolean extMatchesMimeType(String ext, String mime, String[] acceptedExtensions) {

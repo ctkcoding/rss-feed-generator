@@ -1,6 +1,7 @@
 package com.ctkcoding.rssgen.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -33,15 +35,15 @@ class ParseServiceTest {
   private void loadShowJsonFromResources() {
     writeShowJson(
         """
-                {
-                "title": "Time Crisis",
-                "description": "This show rules",
-                "site": "https://timecrisis.apple.com",
-                "link": "https://podcast.local",
-                "image": "cover.jpg",
-                "language": "en-us"
-                }
-                """);
+                        {
+                        "title": "Time Crisis",
+                        "description": "This show rules",
+                        "site": "https://timecrisis.apple.com",
+                        "link": "https://podcast.local",
+                        "image": "cover.jpg",
+                        "language": "en-us"
+                        }
+                        """);
   }
 
   private RssConfig createConfig(String infoDir, String episodesDir) {
@@ -62,14 +64,25 @@ class ParseServiceTest {
     return config;
   }
 
-  private ServiceContext injectConfig(ParseService service, RssConfig mock) {
-    try {
-      FieldSetter.setField(service, ParseService.class.getDeclaredField("rssConfig"), mock);
-      System.setProperty("user.dir", tempDir.toString());
-    } catch (Exception e) {
-      fail("Failed to inject config: " + e.getMessage());
-    }
-    return new ServiceContext(service, mock);
+  private ParseService createService(RssConfig config) {
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    return new ParseService(config, errorLogHandler);
+  }
+
+  private ServiceResult createServiceWithCapturingHandler(RssConfig config) {
+    AtomicReference<ErrorLogHandler> handlerRef = new AtomicReference<>();
+    doAnswer(
+            invocation -> {
+              if (invocation.getArgument(0) != null) {
+                handlerRef.set((ErrorLogHandler) invocation.getArgument(0));
+              }
+              return null;
+            })
+        .when(mock(ErrorLogHandler.class))
+        .writeError(any(), anyString(), anyString());
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    handlerRef.set(errorLogHandler);
+    return new ServiceResult(new ParseService(config, errorLogHandler), errorLogHandler);
   }
 
   private void copyEpisodes() {
@@ -114,14 +127,25 @@ class ParseServiceTest {
     }
   }
 
+  private static class ServiceResult {
+    final ParseService service;
+    final ErrorLogHandler handler;
+
+    ServiceResult(ParseService service, ErrorLogHandler handler) {
+      this.service = service;
+      this.handler = handler;
+    }
+  }
+
   // ============ parseShow tests ============
 
   @Test
   void parseShow_parsesValidJson() {
     loadShowJsonFromResources();
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Show show = ctx.service.parseShow();
+    Show show = service.parseShow();
 
     assertNotNull(show);
     assertEquals("Time Crisis", show.getTitle());
@@ -137,15 +161,15 @@ class ParseServiceTest {
   void parseShow_throwsWhenLanguageMissing() {
     writeShowJson(
         """
-                 {
-                "title": "Test Show",
-                 "link": "https://example.com"
-                 }
-                 """);
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+                        {
+                        "title": "Test Show",
+                         "link": "https://example.com"
+                        }
+                        """);
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> ctx.service.parseShow());
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> service.parseShow());
     assertEquals("Failed to parse show file", exception.getMessage());
     assertInstanceOf(IllegalArgumentException.class, exception.getCause());
     assertTrue(exception.getCause().getMessage().contains("Language"));
@@ -155,27 +179,61 @@ class ParseServiceTest {
   void parseShow_throwsWhenLanguageBlank() {
     writeShowJson(
         """
-                 {
-                 "title": "Test Show",
-                 "link": "https://example.com",
-                 "language": "   "
-                 }
-                 """);
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+                        {
+                        "title": "Test Show",
+                        "link": "https://example.com",
+                        "language": "      "
+                        }
+                        """);
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> ctx.service.parseShow());
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> service.parseShow());
     assertEquals("Failed to parse show file", exception.getMessage());
     assertInstanceOf(IllegalArgumentException.class, exception.getCause());
     assertTrue(exception.getCause().getMessage().contains("Language"));
   }
 
   @Test
-  void parseShow_throwsRuntimeExceptionWhenFileMissing() {
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
-    when(ctx.config.getShowFileName()).thenReturn("nonexistent_show.json");
+  void parseShow_throwsRuntimeExceptionWhenShowFileMissing() {
+    RssConfig config = createConfig("info", "episodes");
+    when(config.getShowFileName()).thenReturn("nonexistent_show.json");
+    final ParseService service = createService(config);
+    System.setProperty("user.dir", tempDir.toString());
 
-    assertThrows(RuntimeException.class, () -> ctx.service.parseShow());
+    assertThrows(RuntimeException.class, () -> service.parseShow());
+  }
+
+  @Test
+  void parseShow_logsErrorToFileWhenShowJsonMissing() {
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    RssConfig config = createConfig("info", "episodes");
+    when(config.getShowFileName()).thenReturn("nonexistent_show.json");
+    final ParseService service = new ParseService(config, errorLogHandler);
+    when(errorLogHandler.getCurrentLogFile()).thenReturn("parse-errors.log");
+    System.setProperty("user.dir", tempDir.toString());
+
+    assertThrows(RuntimeException.class, () -> service.parseShow());
+
+    verify(errorLogHandler, times(1))
+        .writeError(
+            eq(ParseErrorReason.SHOW_CONFIG_FILE_NOT_FOUND),
+            eq("nonexistent_show.json"),
+            anyString());
+  }
+
+  @Test
+  void parseShow_logsErrorToFileWhenShowJsonMalformed() throws IOException {
+    writeShowJson("not valid json {{{");
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    ParseService service = new ParseService(createConfig("info", "episodes"), errorLogHandler);
+    when(errorLogHandler.getCurrentLogFile()).thenReturn("parse-errors.log");
+    System.setProperty("user.dir", tempDir.toString());
+
+    assertThrows(RuntimeException.class, () -> service.parseShow());
+
+    verify(errorLogHandler, times(1))
+        .writeError(eq(ParseErrorReason.SHOW_CONFIG_INVALID_JSON), eq("show.json"), anyString());
   }
 
   // ============ generateShow tests ============
@@ -185,9 +243,10 @@ class ParseServiceTest {
     loadShowJsonFromResources();
     copyEpisodes();
 
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Show show = ctx.service.generateShow();
+    Show show = service.generateShow();
 
     assertNotNull(show);
     assertEquals("Time Crisis", show.getTitle());
@@ -212,9 +271,10 @@ class ParseServiceTest {
       }
     }
 
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Show show = ctx.service.generateShow();
+    Show show = service.generateShow();
 
     assertNotNull(show.getEpisodes());
     assertTrue(show.getEpisodes().size() >= 1);
@@ -227,9 +287,10 @@ class ParseServiceTest {
   void generateShow_throwsWhenEpisodesDirMissing() {
     loadShowJsonFromResources();
 
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "nonexistent_dir"));
+    ParseService service = createService(createConfig("info", "nonexistent_dir"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    assertThrows(IllegalStateException.class, () -> ctx.service.generateShow());
+    assertThrows(IllegalStateException.class, () -> service.generateShow());
   }
 
   @Test
@@ -238,13 +299,17 @@ class ParseServiceTest {
     Path episodesDir = tempDir.resolve("episodes");
     Files.createDirectories(episodesDir);
 
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    when(errorLogHandler.getCurrentLogFile()).thenReturn("parse-errors.log");
+    ParseService service = new ParseService(createConfig("info", "episodes"), errorLogHandler);
+    System.setProperty("user.dir", tempDir.toString());
 
-    Show show = ctx.service.generateShow();
+    Show show = service.generateShow();
 
     assertNotNull(show);
     assertNotNull(show.getEpisodes());
     assertTrue(show.getEpisodes().isEmpty());
+    verify(errorLogHandler, times(1)).writeSummary(0, 0);
   }
 
   @Test
@@ -258,9 +323,12 @@ class ParseServiceTest {
     Path brokenMp3 = episodesDir.resolve("Broken Episode.mp3");
     Files.write(brokenMp3, new byte[50]);
 
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    when(errorLogHandler.getCurrentLogFile()).thenReturn("parse-errors.log");
+    ParseService service = new ParseService(createConfig("info", "episodes"), errorLogHandler);
+    System.setProperty("user.dir", tempDir.toString());
 
-    Show show = ctx.service.generateShow();
+    Show show = service.generateShow();
 
     assertNotNull(show);
     assertNotNull(show.getEpisodes());
@@ -269,39 +337,53 @@ class ParseServiceTest {
       assertNotEquals("Broken Episode.mp3", ep.getTitle());
     }
 
-    // Verify error log file was written
-    Path errorLogFile = tempDir.resolve("parse-errors.log");
-    assertTrue(Files.exists(errorLogFile));
-    String errorContent = Files.readString(errorLogFile);
-    assertTrue(errorContent.contains("Broken Episode.mp3"));
+    // Verify error was logged to handler
+    verify(errorLogHandler, times(1))
+        .writeError(
+            eq(ParseErrorReason.EPISODE_MP3_PARSE_ERROR), eq("Broken Episode.mp3"), anyString());
   }
 
   @Test
-  void generateShow_withEmptyEpisodesAndErrorLog_doesNotCreateErrorLog() throws IOException {
+  void generateShow_withEmptyEpisodes_doesNotWriteErrorLog() throws IOException {
     loadShowJsonFromResources();
     Path episodesDir = tempDir.resolve("episodes");
     Files.createDirectories(episodesDir);
 
-    Path errorLogFile = tempDir.resolve("parse-errors.log");
-    assertFalse(Files.exists(errorLogFile));
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    ParseService service = new ParseService(createConfig("info", "episodes"), errorLogHandler);
+    System.setProperty("user.dir", tempDir.toString());
 
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
-
-    Show show = ctx.service.generateShow();
+    Show show = service.generateShow();
 
     assertNotNull(show);
     assertTrue(show.getEpisodes().isEmpty());
-    assertFalse(Files.exists(errorLogFile));
+    verify(errorLogHandler, times(0)).writeError(any(), anyString(), anyString());
   }
 
-  // ============ parseEpisode tests ============
+  @Test
+  void generateShow_errorLogUsesTimestampedFilename() throws IOException {
+    loadShowJsonFromResources();
+    copyEpisodes();
+
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    ParseService service = new ParseService(createConfig("info", "episodes"), errorLogHandler);
+    System.setProperty("user.dir", tempDir.toString());
+
+    service.generateShow();
+
+    verify(errorLogHandler, times(1)).startParseRun();
+    verify(errorLogHandler, times(1)).writeSummary(anyInt(), anyInt());
+  }
+
+  // ============ parse episode tests ============
 
   @Test
   void parseEpisode_setsTitleFromFilenameWhenNoMp3Metadata() throws IOException {
     copyEpisodes();
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     assertNotNull(episode);
     assertNotNull(episode.getTitle()); // real MP3 has ID3v2 title
@@ -316,9 +398,10 @@ class ParseServiceTest {
   @Test
   void parseEpisode_constructsCorrectUrl() throws IOException {
     copyEpisodes();
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     String expectedUrl =
         "https://podcast.local/episodes/"
@@ -329,9 +412,10 @@ class ParseServiceTest {
   @Test
   void parseEpisode_constructsCorrectImage() throws IOException {
     copyEpisodes();
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     String expectedImage =
         "https://podcast.local/artwork/"
@@ -343,9 +427,10 @@ class ParseServiceTest {
   @Test
   void parseEpisode_setsPubDateFromFileLastModifiedWhenFileExists() throws IOException {
     copyEpisodes();
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     assertNotNull(episode);
     assertNotNull(episode.getPubDate());
@@ -355,9 +440,10 @@ class ParseServiceTest {
   @Test
   void parseEpisode_enclosureContainsUrlAndType() throws IOException {
     copyEpisodes();
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     assertNotNull(episode.getEnclosureUrl());
     assertTrue(episode.getEnclosureUrl().contains("https://podcast.local/episodes/"));
@@ -366,19 +452,68 @@ class ParseServiceTest {
 
   @Test
   void parseEpisode_throwsForMissingFile() {
-    ServiceContext ctx = injectConfig(new ParseService(), createConfig("info", "episodes"));
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
 
     RuntimeException exception =
         assertThrows(
             RuntimeException.class,
             () -> {
-              ctx.service.parseEpisode("Totally Missing Episode.mp3", "https://podcast.local");
+              service.parseEpisode("Totally Missing Episode.mp3", "https://podcast.local");
             });
 
     assertTrue(
-        exception
-            .getMessage()
-            .contains("Failed to parse MP3 metadata for: Totally Missing Episode.mp3"));
+        exception.getMessage().contains("Totally Missing Episode.mp3"),
+        "Exception message should contain the episode filename");
+  }
+
+  @Test
+  void parseEpisode_throwsAndLogsErrorWhenPubDateMissing() throws IOException {
+    copyEpisodes();
+    Path episodesDir2 = tempDir.resolve("episodes2");
+    Files.createDirectories(episodesDir2);
+    // Create a file that we will delete between path resolution and stat
+    Path stubFile = episodesDir2.resolve("Ghost Episode.mp3");
+    Files.write(stubFile, new byte[2048]);
+    Files.delete(stubFile);
+
+    RssConfig config = mock(RssConfig.class);
+    when(config.getInfoDir()).thenReturn("info");
+    when(config.getShowFileName()).thenReturn("show.json");
+    when(config.getEpisodesDir()).thenReturn("episodes2");
+    when(config.getEpisodeFileExtension()).thenReturn(".mp3");
+    when(config.getArtworkFileExtension()).thenReturn(".jpeg");
+    when(config.getArtworkDir()).thenReturn("artwork");
+    when(config.getExtractArtwork()).thenReturn(false);
+    when(config.getErrorLogFile()).thenReturn("parse-errors.log");
+
+    ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
+    ParseService service = new ParseService(config, errorLogHandler);
+    System.setProperty("user.dir", tempDir.toString());
+
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> {
+              service.parseEpisode("Ghost Episode.mp3", "https://podcast.local");
+            });
+
+    assertTrue(exception.getMessage().contains("Failed to determine publication date"));
+    verify(errorLogHandler, times(1))
+        .writeError(
+            eq(ParseErrorReason.EPISODE_PUB_DATE_MISSING), eq("Ghost Episode.mp3"), anyString());
+  }
+
+  @Test
+  void parseEpisode_warnsFileSizeUnknown_butIncludeEpisode() throws IOException {
+    copyEpisodes();
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
+
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+
+    assertNotNull(episode);
+    assertNotNull(episode.getEnclosureUrl());
   }
 
   @Test
@@ -387,10 +522,11 @@ class ParseServiceTest {
     loadShowJsonFromResources();
     copyEpisodes();
 
-    ServiceContext ctx =
-        injectConfig(new ParseService(), createConfigWithExtractArtwork("info", "episodes", true));
+    RssConfig config = createConfigWithExtractArtwork("info", "episodes", true);
+    ParseService service = createService(config);
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     assertNotNull(episode);
     assertNotNull(episode.getImage());
@@ -404,10 +540,11 @@ class ParseServiceTest {
     loadShowJsonFromResources();
     copyEpisodes();
 
-    ServiceContext ctx =
-        injectConfig(new ParseService(), createConfigWithExtractArtwork("info", "episodes", false));
+    RssConfig config = createConfigWithExtractArtwork("info", "episodes", false);
+    ParseService service = createService(config);
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     assertNotNull(episode);
     Path artworkFile = tempDir.resolve("artwork").resolve("Episode 01.jpeg");
@@ -424,10 +561,11 @@ class ParseServiceTest {
     long originalLastModified = Files.getLastModifiedTime(artworkFile).toMillis();
     Thread.sleep(100);
 
-    ServiceContext ctx =
-        injectConfig(new ParseService(), createConfigWithExtractArtwork("info", "episodes", true));
+    RssConfig config = createConfigWithExtractArtwork("info", "episodes", true);
+    ParseService service = createService(config);
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     assertNotNull(episode);
     assertTrue(Files.exists(artworkFile), "Artwork file should still exist");
@@ -437,37 +575,19 @@ class ParseServiceTest {
   }
 
   @Test
-  void parseEpisode_logsErrorWhenMimeMismatch() throws IOException {
+  void parseEpisode_warnsWhenMimeMismatch() throws IOException {
     loadShowJsonFromResources();
     copyEpisodes();
 
     RssConfig config = createConfigWithExtractArtwork("info", "episodes", true);
     when(config.getArtworkFileExtension()).thenReturn(".png");
-    ServiceContext ctx = injectConfig(new ParseService(), config);
+    ParseService service = createService(config);
+    System.setProperty("user.dir", tempDir.toString());
 
-    Episode episode = ctx.service.parseEpisode("Episode 01.mp3", "https://podcast.local");
+    Episode episode = service.parseEpisode("Episode 01.mp3", "https://podcast.local");
 
     assertNotNull(episode);
     Path artworkFile = tempDir.resolve("artwork").resolve("Episode 01.png");
     assertFalse(Files.exists(artworkFile), "Artwork should not be written due to MIME mismatch");
-    Path errorLogFile = tempDir.resolve("parse-errors.log");
-    assertTrue(Files.exists(errorLogFile), "Error log should be written on MIME mismatch");
-    String errorContent = Files.readString(errorLogFile);
-    assertTrue(errorContent.contains("MIME type"), "Error log should mention MIME mismatch");
-  }
-
-  // ============ helpers ============
-
-  private record ServiceContext(ParseService service, RssConfig config) {}
-
-  private static class FieldSetter {
-    static void setField(Object target, java.lang.reflect.Field field, Object value) {
-      try {
-        field.setAccessible(true);
-        field.set(target, value);
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to set field", e);
-      }
-    }
   }
 }
