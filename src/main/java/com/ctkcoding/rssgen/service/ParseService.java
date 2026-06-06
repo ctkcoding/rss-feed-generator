@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,12 @@ public class ParseService {
   private static final Logger logger = LoggerFactory.getLogger(ParseService.class);
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
+
+  private static final Map<String, String[]> MIME_TYPE_MAPPING =
+      Map.of(
+          "image/jpeg", new String[] {".jpg", ".jpeg"},
+          "image/png", new String[] {".png"},
+          "image/gif", new String[] {".gif"});
 
   @Autowired private RssConfig rssConfig;
 
@@ -122,6 +129,7 @@ public class ParseService {
 
   public Episode parseEpisode(String episodeFile, String showLink) {
     String episodesDir = rssConfig.getEpisodesDir();
+    String artworkDir = rssConfig.getArtworkDir();
 
     Path filePath =
         Path.of(System.getProperty("user.dir")).resolve(episodesDir).resolve(episodeFile);
@@ -149,6 +157,53 @@ public class ParseService {
           String tdes = tag.getComment();
           if (tdes != null && !tdes.isBlank()) {
             description = tdes;
+          }
+
+          if (rssConfig.getExtractArtwork()) {
+            String artworkFilename = episodeFile;
+            int lastDot = episodeFile.lastIndexOf('.');
+            if (lastDot > 0) {
+              artworkFilename = episodeFile.substring(0, lastDot);
+            }
+
+            Path artworkFilePath =
+                Path.of(System.getProperty("user.dir"))
+                    .resolve(artworkDir)
+                    .resolve(artworkFilename + rssConfig.getArtworkFileExtension());
+
+            if (!Files.exists(artworkFilePath) && tag.getAlbumImage() != null) {
+              String mime = tag.getAlbumImageMimeType();
+              String[] acceptedExtensions = MIME_TYPE_MAPPING.getOrDefault(mime, new String[] {});
+              if (acceptedExtensions.length == 0) {
+                String errorMsg =
+                    episodeFile + " - No matching extension found for MIME type: " + mime;
+                logger.warn(errorMsg);
+                appendToErrorLog(errorMsg);
+              } else {
+                String configExt = rssConfig.getArtworkFileExtension();
+                if (extMatchesMimeType(configExt, mime, acceptedExtensions)) {
+                  try {
+                    byte[] imageData = tag.getAlbumImage();
+                    Files.write(artworkFilePath, imageData);
+                  } catch (IOException e) {
+                    String errorMsg =
+                        episodeFile + " - Failed to write artwork file: " + e.getMessage();
+                    logger.warn(errorMsg, e);
+                    appendToErrorLog(errorMsg);
+                  }
+                } else {
+                  String errorMsg =
+                      episodeFile
+                          + " - MIME type '"
+                          + mime
+                          + "' doesn't match configured extension '"
+                          + configExt
+                          + "'";
+                  logger.warn(errorMsg);
+                  appendToErrorLog(errorMsg);
+                }
+              }
+            }
           }
         }
       }
@@ -192,44 +247,31 @@ public class ParseService {
         .build();
   }
 
-  public Boolean artworkExists(String episodeFile) {
-    if (!rssConfig.getExtractArtwork()) {
-      return false;
+  private void appendToErrorLog(String line) {
+    String basePath = System.getProperty("user.dir");
+    String errorLogPath = basePath + "/" + rssConfig.getErrorLogFile();
+    try {
+      Path errorLogFile = Path.of(errorLogPath);
+      Path errorLogDir = errorLogFile.getParent();
+      if (errorLogDir != null) {
+        Files.createDirectories(errorLogDir);
+      }
+      Files.writeString(
+          errorLogFile,
+          line + System.lineSeparator(),
+          java.nio.file.StandardOpenOption.CREATE,
+          java.nio.file.StandardOpenOption.APPEND);
+    } catch (IOException e) {
+      logger.error("Failed to write error log: {}", errorLogPath, e);
     }
-    String artworkFilename = episodeFile;
-    int lastDot = episodeFile.lastIndexOf('.');
-    if (lastDot > 0) {
-      artworkFilename = episodeFile.substring(0, lastDot);
-    }
-    Path artworkPath =
-        Path.of(System.getProperty("user.dir"))
-            .resolve(rssConfig.getArtworkDir())
-            .resolve(artworkFilename + rssConfig.getArtworkFileExtension());
-    return Files.exists(artworkPath);
   }
 
-  public void generateArtwork(String artworkPath) {
-    if (!rssConfig.getExtractArtwork()) {
-      return;
-    }
-    File file = new File(artworkPath);
-    try {
-      Mp3File mp3File = new Mp3File(file);
-      if (mp3File.hasId3v2Tag()) {
-        ID3v2 tag = mp3File.getId3v2Tag();
-        if (tag != null && tag.getAlbumImage() != null) {
-          byte[] imageData = tag.getAlbumImage();
-          String artworkFilePath = artworkPath;
-          int lastDot = artworkPath.lastIndexOf('.');
-          if (lastDot > 0) {
-            artworkFilePath = artworkPath.substring(0, lastDot);
-          }
-          String artworkFull = artworkFilePath + rssConfig.getArtworkFileExtension();
-          Files.write(Path.of(artworkFull), imageData);
-        }
+  private boolean extMatchesMimeType(String ext, String mime, String[] acceptedExtensions) {
+    for (String accepted : acceptedExtensions) {
+      if (ext.equalsIgnoreCase(accepted)) {
+        return true;
       }
-    } catch (IOException | UnsupportedTagException | InvalidDataException e) {
-      logger.error("Failed to generate artwork from: {}", artworkPath, e);
     }
+    return false;
   }
 }
