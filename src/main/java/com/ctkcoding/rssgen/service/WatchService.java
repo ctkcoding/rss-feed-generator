@@ -1,5 +1,6 @@
 package com.ctkcoding.rssgen.service;
 
+import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Show;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -15,8 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Component
 public class WatchService {
-    volatile AtomicBoolean newFileChanges = new AtomicBoolean(false);
-    volatile AtomicInteger failureCounter = new AtomicInteger(0);
+    AtomicBoolean newFileChanges = new AtomicBoolean(false);
+    AtomicInteger failureCounter = new AtomicInteger(0);
 
     private static final Logger logger = LoggerFactory.getLogger(WatchService.class);
 
@@ -26,7 +27,8 @@ public class WatchService {
     @Autowired
     RssService rssService;
 
-    private Integer failureLimit = 5;
+    @Autowired
+    RssConfig rssConfig;
 
     // todo - watch service should watch the episodes directory that parse service reads episodes file from
     // todo - if new files, deleted files, or changes to existing files, set value of newFileChanges to true
@@ -34,18 +36,18 @@ public class WatchService {
     @Scheduled(cron = "0 * * * * *")
     public void checkForNewChanges() {
         if (newFileChanges.get()) {
-            logger.info("New file changes found. Kicking off parse and write");
-            Show show = parseService.generateShow();
             try {
+                logger.info("New file changes found. Kicking off parse and write");
+                Show show = parseService.generateShow();
                 String path = rssService.writeRss(show);
                 logger.info("RSS feed written to: {}", path);
                 newFileChanges.set(false);
             } catch (Exception e) {
                 logger.error("Failed to generate RSS feed: {}", e.getMessage(), e);
                 failureCounter.incrementAndGet();
-                if (failureCounter.get() > failureLimit); {
+                if (failureCounter.get() > rssConfig.getFailureLimit()) {
                     newFileChanges.set(false);
-                    logger.error("Reached RSS feed generation failure limit of 5. Ending retries.");
+                    logger.error("Reached RSS feed generation failure limit of {}. Ending retries.", rssConfig.getFailureLimit());
                 }
             }
         } else {
