@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.handler.ErrorLogHandler;
 import com.ctkcoding.rssgen.model.Episode;
 import com.ctkcoding.rssgen.model.Show;
 import java.io.File;
@@ -34,7 +35,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            "info",
             "rss.xml",
             "show.json",
             ".mp3",
@@ -137,7 +138,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             filePath,
             "show.json",
             ".mp3",
@@ -165,7 +166,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             filePath,
             "show.json",
             ".mp3",
@@ -200,7 +201,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             filePath,
             "show.json",
             ".mp3",
@@ -246,7 +247,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             filePath,
             "show.json",
             ".mp3",
@@ -286,7 +287,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             filePath,
             "show.json",
             ".mp3",
@@ -323,7 +324,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             filePath,
             "show.json",
             ".mp3",
@@ -357,7 +358,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             unwriteablePath,
             "show.json",
             ".mp3",
@@ -384,7 +385,7 @@ public class RssServiceTest {
         new RssConfig(
             null,
             null,
-            null,
+            tempDir.resolve("info").toString(),
             filePath,
             "show.json",
             ".mp3",

@@ -32,12 +32,13 @@ class FileControllerTest {
   void setUp() {
     when(rssConfig.getEpisodesDir()).thenReturn("episodes");
     when(rssConfig.getArtworkDir()).thenReturn("artwork");
+    when(rssConfig.getInfoDir()).thenReturn("info");
   }
 
   @Test
   void rss_returnsOkWhenFileExists() throws Exception {
     byte[] expectedContent = "some xml content".getBytes();
-    when(fileService.getFile("", "rss.xml")).thenReturn(expectedContent);
+    when(fileService.getFile("info", "rss.xml")).thenReturn(expectedContent);
     when(rssConfig.getRssFileName()).thenReturn("rss.xml");
 
     mockMvc
@@ -77,7 +78,8 @@ class FileControllerTest {
   @Test
   void rss_returnsNotFoundWhenFileDoesNotExist() throws Exception {
     when(rssConfig.getRssFileName()).thenReturn("missing.xml");
-    when(fileService.getFile("", "missing.xml")).thenThrow(new NoSuchFileException("missing.xml"));
+    when(fileService.getFile("info", "missing.xml"))
+        .thenThrow(new NoSuchFileException("missing.xml"));
 
     mockMvc.perform(get("/rss")).andExpect(status().isNotFound());
   }

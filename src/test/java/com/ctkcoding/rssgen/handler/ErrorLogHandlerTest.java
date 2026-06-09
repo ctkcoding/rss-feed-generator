@@ -1,12 +1,15 @@
-package com.ctkcoding.rssgen.service;
+package com.ctkcoding.rssgen.handler;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.service.ParseErrorReason;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
@@ -14,11 +17,24 @@ import org.mockito.Mockito;
 class ErrorLogHandlerTest {
 
   @TempDir Path tempDir;
+  private String originalUserDir;
+
+  @BeforeEach
+  void setUp() {
+    originalUserDir = System.getProperty("user.dir");
+  }
+
+  @AfterEach
+  void tearDown() {
+    System.setProperty("user.dir", originalUserDir);
+  }
 
   private ErrorLogHandler createHandler(String errorLogFile, String artDir) {
     RssConfig config = Mockito.mock(RssConfig.class);
     when(config.getErrorLogFile()).thenReturn(errorLogFile);
     when(config.getArtworkDir()).thenReturn(artDir);
+    when(config.getInfoDir()).thenReturn("info");
+    System.setProperty("user.dir", tempDir.toString());
     return new ErrorLogHandler(config);
   }
 
@@ -36,12 +52,13 @@ class ErrorLogHandlerTest {
   void startParseRun_createsLogFile() throws IOException {
     ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
     String filename = handler.startParseRun();
-    Path logFile = tempDir.resolve(filename);
+    Path logFile = tempDir.resolve("info").resolve(filename);
 
     // We can't resolve to tempDir directly since user.dir is not set,
     // so just verify the returned filename is non-null and matches pattern
     assertNotNull(filename);
     assertTrue(filename.startsWith("parse-errors-"));
+    assertTrue(Files.exists(logFile), "Log file should exist at " + logFile);
   }
 
   @Test
@@ -55,7 +72,7 @@ class ErrorLogHandlerTest {
         "test.mp3",
         "InvalidDataException - File is not a valid MP3");
 
-    Path logFile = Path.of(System.getProperty("user.dir"), filename);
+    Path logFile = tempDir.resolve("info").resolve(filename);
     assertTrue(Files.exists(logFile));
     String content = Files.readString(logFile);
     assertTrue(content.contains("[ERROR]"));
@@ -71,7 +88,7 @@ class ErrorLogHandlerTest {
 
     handler.writeError(ParseErrorReason.EPISODE_FILE_SIZE_UNKNOWN, "test.mp3", "No such file");
 
-    Path logFile = Path.of(System.getProperty("user.dir"), handler.getCurrentLogFile());
+    Path logFile = tempDir.resolve("info").resolve(handler.getCurrentLogFile());
     String content = Files.readString(logFile);
     assertTrue(content.contains("[WARN]"), "Warning errors should use [WARN] prefix");
     assertFalse(content.contains("[ERROR]"), "Warning errors should not use [ERROR] prefix");
@@ -93,7 +110,7 @@ class ErrorLogHandlerTest {
     handler.writeError(ParseErrorReason.EPISODE_MP3_PARSE_ERROR, "bad.mp3", "corrupt file");
     handler.writeSummary(5, 1);
 
-    Path logFile = Path.of(System.getProperty("user.dir"), handler.getCurrentLogFile());
+    Path logFile = tempDir.resolve("info").resolve(handler.getCurrentLogFile());
     String content = Files.readString(logFile);
     assertTrue(content.contains("Parsed 5 episodes, 1 failures."));
   }
@@ -119,7 +136,7 @@ class ErrorLogHandlerTest {
     handler.writeError(
         ParseErrorReason.SHOW_CONFIG_FILE_NOT_FOUND, "show.json", "No such file or directory");
 
-    Path logFile = Path.of(System.getProperty("user.dir"), handler.getCurrentLogFile());
+    Path logFile = tempDir.resolve("info").resolve(handler.getCurrentLogFile());
     String content = Files.readString(logFile);
     assertTrue(content.contains("Show config - show.json not found"));
     assertTrue(content.contains("show.json"));
@@ -136,7 +153,7 @@ class ErrorLogHandlerTest {
         "ep01.mp3",
         "MIME type 'image/png' doesn't match configured extension '.jpeg'");
 
-    Path logFile = Path.of(System.getProperty("user.dir"), handler.getCurrentLogFile());
+    Path logFile = tempDir.resolve("info").resolve(handler.getCurrentLogFile());
     String content = Files.readString(logFile);
     assertTrue(content.contains("WARNING: MIME type mismatch"));
     assertTrue(content.contains("ep01.mp3"));
@@ -147,7 +164,7 @@ class ErrorLogHandlerTest {
     ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
     handler.startParseRun();
 
-    Path logFile = Path.of(System.getProperty("user.dir"), handler.getCurrentLogFile());
+    Path logFile = tempDir.resolve("info").resolve(handler.getCurrentLogFile());
     String content = Files.readString(logFile);
     assertTrue(content.contains("=== Parse run started:"));
   }
@@ -159,7 +176,7 @@ class ErrorLogHandlerTest {
 
     handler.writeError(ParseErrorReason.EPISODE_PUB_DATE_MISSING, "", "file not found");
 
-    Path logFile = Path.of(System.getProperty("user.dir"), handler.getCurrentLogFile());
+    Path logFile = tempDir.resolve("info").resolve(handler.getCurrentLogFile());
     String content = Files.readString(logFile);
     String[] lines = content.split(System.lineSeparator());
     String lastLine = lines[lines.length - 1];

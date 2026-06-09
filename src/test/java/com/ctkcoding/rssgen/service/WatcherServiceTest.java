@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.model.Show;
-import com.ctkcoding.rssgen.service.ErrorLogHandler;
+import com.ctkcoding.rssgen.handler.ErrorLogHandler;
 import java.io.IOException;
 import java.nio.file.*;
 import org.junit.jupiter.api.*;

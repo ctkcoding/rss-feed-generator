@@ -1,11 +1,24 @@
 services:
-  server:
+  rssgen:
     build:
       context: .
     environment:
-      NODE_ENV: production
+      RSS_ARTWORK_DIR: /app/artwork
+      RSS_EPISODES_DIR: /app/episodes
+      RSS_INFO_DIR: /app/info
+      RSS_RSS_FILE_NAME: rss.xml
+      RSS_SHOW_FILE_NAME: show.json
+      RSS_EPISODE_FILE_EXTENSION: .mp3
+      RSS_ARTWORK_FILE_EXTENSION: .jpeg
+      RSS_EXTRACT_ARTWORK: "false"
+      RSS_FILE_WATCH: "true"
+      RSS_RUN_ON_STARTUP: "false"
+      RSS_LANGUAGE: en-us
+      RSS_ERROR_LOG_FILE: parse-errors.log
+      RSS_FAILURE_LIMIT: "5"
     volumes:
-      - /Users/chrisk/code/tools/rss-feed-generator/episodes:/usr/src/app/episodes
-      - /Users/chrisk/code/tools/rss-feed-generator/artwork:/usr/src/app/artwork
+       - ./artwork:/app/artwork
+       - ./episodes:/app/episodes
+       - ./info:/app/info
     ports:
-      - 3000:3000
+       - 8080:8080

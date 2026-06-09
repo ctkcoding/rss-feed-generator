@@ -1,5 +1,6 @@
 package com.ctkcoding.rssgen.service;
 
+import com.ctkcoding.rssgen.config.RssConfig;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,14 +15,22 @@ import org.springframework.stereotype.Service;
 @Service
 public class FileService {
 
+  private final RssConfig rssConfig;
+
   @Getter private Path basePath = Path.of(System.getProperty("user.dir"));
 
-  private List<String> allowedSubpaths = List.of("artwork", "episodes", "");
+  private List<String> dynamicAllowedSubpaths;
+
+  public FileService(RssConfig rssConfig) {
+    this.rssConfig = rssConfig;
+    this.dynamicAllowedSubpaths =
+        List.of("", rssConfig.getEpisodesDir(), rssConfig.getArtworkDir(), rssConfig.getInfoDir());
+  }
 
   private static final Logger logger = LoggerFactory.getLogger(FileService.class);
 
   public byte[] getFile(String extraPath, String file) throws IOException {
-    if (!allowedSubpaths.contains(extraPath)) {
+    if (!dynamicAllowedSubpaths.contains(extraPath)) {
       throw new IllegalArgumentException("Path traversal attempt detected");
     }
 

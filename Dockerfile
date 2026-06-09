@@ -1,32 +1,38 @@
 # syntax=docker/dockerfile:1
 
-ARG NODE_VERSION=22.18.0
+# Stage 1: Build
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /build
+COPY gradlew gradlew.bat ./
+COPY gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.properties ./gradle/wrapper/
+COPY build.gradle.kts settings.gradle.kts ./
+COPY src/ ./src/
 
-FROM node:${NODE_VERSION}-alpine as development
-ENV NODE_ENV development
-ENV NODE_ENV=${NODE_ENV}
+RUN chmod +x ./gradlew
+RUN ./gradlew bootJar --no-daemon
 
+# Stage 2: Runtime
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
 
-WORKDIR /usr/src/app
-COPY package*.json ./
-COPY tsconfig.json ./
+COPY --from=builder /build/build/libs/*.jar app.jar
 
-RUN npm install
-COPY . ./
+EXPOSE 8080
 
-RUN npm run build
+# Default application.properties values baked in as fallback
+# Spring Boot os-env property source overrides these at runtime via env vars
+ENV RSS_ARTWORK_DIR=artwork
+ENV RSS_EPISODES_DIR=episodes
+ENV RSS_INFO_DIR=info
+ENV RSS_RSS_FILE_NAME=rss.xml
+ENV RSS_SHOW_FILE_NAME=show.json
+ENV RSS_EPISODE_FILE_EXTENSION=.mp3
+ENV RSS_ARTWORK_FILE_EXTENSION=.jpeg
+ENV RSS_EXTRACT_ARTWORK=false
+ENV RSS_FILE_WATCH=true
+ENV RSS_RUN_ON_STARTUP=false
+ENV RSS_LANGUAGE=en-us
+ENV RSS_ERROR_LOG_FILE=parse-errors.log
+ENV RSS_FAILURE_LIMIT=5
 
-FROM node:${NODE_VERSION}-alpine as production
-ENV NODE_ENV production
-ENV NODE_ENV=${NODE_ENV}
-
-RUN apk add ffmpeg
-
-WORKDIR /usr/src/app
-COPY package*.json .
-RUN npm ci --only=production
-COPY --from=development /usr/src/app/dist ./dist
-
-EXPOSE 3000
-
-CMD ["node", "dist/server.js"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

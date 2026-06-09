@@ -1,6 +1,7 @@
 package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.handler.ErrorLogHandler;
 import com.ctkcoding.rssgen.model.Episode;
 import com.ctkcoding.rssgen.model.Show;
 import com.rometools.modules.itunes.EntryInformation;
@@ -44,7 +45,10 @@ public class RssService {
     Channel channel = buildChannel(show);
 
     String rssFileName = rssConfig.getRssFileName();
-    Path outputPath = Path.of(System.getProperty("user.dir")).resolve(rssFileName);
+    Path outputPath =
+        Path.of(System.getProperty("user.dir"))
+            .resolve(rssConfig.getInfoDir())
+            .resolve(rssFileName);
 
     try {
       Path parent = outputPath.getParent();
