@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.handler.ErrorLogHandler;
 import com.ctkcoding.rssgen.model.Episode;
 import com.ctkcoding.rssgen.model.Show;
 import java.io.File;

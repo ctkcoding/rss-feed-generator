@@ -2,6 +2,7 @@ package com.ctkcoding.rssgen.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.ctkcoding.rssgen.config.RssConfig;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
@@ -13,10 +14,26 @@ class FileServiceTest {
 
   private FileService fileService;
   private Path testResourcesDir;
+  private RssConfig rssConfig;
 
   @BeforeEach
   void setUp() throws URISyntaxException {
-    fileService = new FileService();
+    rssConfig =
+        new RssConfig(
+            "info",
+            "episodes",
+            "artwork",
+            "rss.xml",
+            "show.xml",
+            ".mp3",
+            ".jpeg",
+            "en",
+            true,
+            true,
+            true,
+            5,
+            "parse-errors.log");
+    fileService = new FileService(rssConfig);
     String rssXmlPath = getClass().getResource("/rss.xml").toURI().getPath();
     testResourcesDir = Path.of(rssXmlPath).getParent();
     setBasePath(testResourcesDir);
@@ -24,60 +41,39 @@ class FileServiceTest {
 
   @Test
   void returnsRssFile() throws IOException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     byte[] result = fileService.getFile("", "rss.xml");
     assertTrue(result.length > 0);
   }
 
   @Test
   void returnsEpisodeFile() throws IOException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     byte[] result = fileService.getFile("episodes", "Episode 01.mp3");
     assertTrue(result.length > 0);
   }
 
   @Test
   void returnsArtworkFile() throws IOException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     byte[] result = fileService.getFile("artwork", "Episode 01.jpeg");
     assertTrue(result.length > 0);
   }
 
   @Test
   void returnsNotFoundForMissingRss() throws IOException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     assertThrows(NoSuchFileException.class, () -> fileService.getFile("", "nonexistent.xml"));
   }
 
   @Test
   void returnsNotFoundForMissingEpisode() throws IOException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     assertThrows(NoSuchFileException.class, () -> fileService.getFile("episodes", "missing.mp3"));
   }
 
   @Test
   void returnsNotFoundForMissingArtwork() throws IOException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     assertThrows(NoSuchFileException.class, () -> fileService.getFile("artwork", "missing.jpg"));
   }
 
   @Test
   void rejectsPathTraversalInFileName() throws URISyntaxException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     String path =
         "episodes"
             + java.io.File.separator
@@ -95,27 +91,18 @@ class FileServiceTest {
 
   @Test
   void rejectsPathTraversalInExtraPath() throws URISyntaxException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     assertThrows(
         IllegalArgumentException.class, () -> fileService.getFile("../../artwork", "../rss.xml"));
   }
 
   @Test
   void rejectsPathTraversalInBothFields() throws URISyntaxException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     assertThrows(
         IllegalArgumentException.class, () -> fileService.getFile("../artwork", "../rss.xml"));
   }
 
   @Test
   void allowsDotsInFilename() throws IOException {
-    fileService = new FileService();
-    setBasePath(testResourcesDir);
-
     byte[] result = fileService.getFile("episodes", "Episode 01.mp3");
     assertTrue(result.length > 0);
   }

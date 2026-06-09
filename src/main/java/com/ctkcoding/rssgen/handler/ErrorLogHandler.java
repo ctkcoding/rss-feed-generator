@@ -1,6 +1,7 @@
-package com.ctkcoding.rssgen.service;
+package com.ctkcoding.rssgen.handler;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.service.ParseErrorReason;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,16 +29,14 @@ public class ErrorLogHandler {
     String timestamp = LocalDateTime.now().format(FILE_TIME_FMT);
     currentLogFile = "parse-errors-" + timestamp + ".log";
     String basePath = System.getProperty("user.dir");
-    Path errorLogFile = Path.of(basePath, currentLogFile);
-    Path errorLogDir = errorLogFile.getParent();
-    if (errorLogDir != null) {
-      try {
-        Files.createDirectories(errorLogDir);
-      } catch (IOException e) {
-        logger.error("Failed to create error log directory: {}", errorLogDir, e);
-        return null;
-      }
+    Path errorLogDir = Path.of(basePath, rssConfig.getInfoDir());
+    try {
+      Files.createDirectories(errorLogDir);
+    } catch (IOException e) {
+      logger.error("Failed to create error log directory: {}", errorLogDir, e);
+      return null;
     }
+    Path errorLogFile = errorLogDir.resolve(currentLogFile);
     try {
       Files.writeString(
           errorLogFile,
@@ -53,7 +52,8 @@ public class ErrorLogHandler {
   public void writeError(ParseErrorReason reason, String context, String detail) {
     if (currentLogFile == null) return;
     String basePath = System.getProperty("user.dir");
-    Path errorLogFile = Path.of(basePath, currentLogFile);
+    Path errorLogDir = Path.of(basePath, rssConfig.getInfoDir());
+    Path errorLogFile = errorLogDir.resolve(currentLogFile);
 
     StringBuilder line = new StringBuilder();
     line.append(reason.isWarning() ? "[WARN] " : "[ERROR] ");
@@ -80,7 +80,8 @@ public class ErrorLogHandler {
   public void writeSummary(int totalEpisodes, int failures) {
     if (currentLogFile == null) return;
     String basePath = System.getProperty("user.dir");
-    Path errorLogFile = Path.of(basePath, currentLogFile);
+    Path errorLogDir = Path.of(basePath, rssConfig.getInfoDir());
+    Path errorLogFile = errorLogDir.resolve(currentLogFile);
     if (!Files.exists(errorLogFile)) return;
 
     String summary = "Parsed " + totalEpisodes + " episodes, " + failures + " failures.";

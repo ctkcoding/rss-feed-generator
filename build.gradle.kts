@@ -18,6 +18,10 @@ repositories {
 	mavenCentral()
 }
 
+springBoot {
+	mainClass.set("com.ctkcoding.rssgen.RssGenApplication")
+}
+
 dependencies {
 	implementation("com.mpatric:mp3agic:0.9.1")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")

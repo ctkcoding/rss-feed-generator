@@ -1,6 +1,7 @@
 package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.handler.ErrorLogHandler;
 import com.ctkcoding.rssgen.model.Show;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;

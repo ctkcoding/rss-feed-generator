@@ -1,6 +1,7 @@
 package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.handler.ErrorLogHandler;
 import com.ctkcoding.rssgen.model.Episode;
 import com.ctkcoding.rssgen.model.Show;
 import com.mpatric.mp3agic.ID3v2;
@@ -118,9 +119,9 @@ public class ParseService {
   public Show parseShow() {
     try {
       String basePath = System.getProperty("user.dir");
-      String showFilePath =
-          basePath + "/" + rssConfig.getInfoDir() + "/" + rssConfig.getShowFileName();
-      File showFile = new File(showFilePath);
+      Path showFilePath =
+          Path.of(basePath).resolve(rssConfig.getInfoDir()).resolve(rssConfig.getShowFileName());
+      File showFile = showFilePath.toFile();
 
       Show show = objectMapper.readValue(showFile, Show.class);
 

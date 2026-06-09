@@ -30,7 +30,8 @@ public class FileController {
 
   @GetMapping("/rss")
   public ResponseEntity<byte[]> returnRss() {
-    return buildResponse("", rssConfig.getRssFileName(), "text/xml", rssConfig.getRssFileName());
+    return buildResponse(
+        rssConfig.getInfoDir(), rssConfig.getRssFileName(), "text/xml", rssConfig.getRssFileName());
   }
 
   @GetMapping("/episodes/{episode}")
@@ -55,7 +56,9 @@ public class FileController {
           ContentDisposition.attachment().filename(downloadFilename).build());
       return ResponseEntity.ok().headers(headers).body(content);
     } catch (IllegalArgumentException e) {
-      logger.warn("Path traversal attempt: {}", file);
+      logger.warn("Path traversal attempt: file {}", file);
+      logger.warn("Path traversal attempt: extraPath {}", extraPath);
+      logger.warn("Path traversal attempt: downloadFilename {}", downloadFilename);
       return ResponseEntity.badRequest().build();
     } catch (NoSuchFileException e) {
       logger.warn("File not found: {}", file);
