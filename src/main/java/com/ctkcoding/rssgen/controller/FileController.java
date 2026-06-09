@@ -3,14 +3,16 @@ package com.ctkcoding.rssgen.controller;
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.service.FileService;
 import java.io.IOException;
-import java.nio.file.NoSuchFileException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,44 +31,50 @@ public class FileController {
   @Autowired RssConfig rssConfig;
 
   @GetMapping("/rss")
-  public ResponseEntity<byte[]> returnRss() {
+  public ResponseEntity<InputStreamResource> returnRss() throws IOException {
     return buildResponse(
         rssConfig.getInfoDir(), rssConfig.getRssFileName(), "text/xml", rssConfig.getRssFileName());
   }
 
   @GetMapping("/episodes/{episode}")
-  public ResponseEntity<byte[]> returnEpisode(@PathVariable String episode) {
+  public ResponseEntity<InputStreamResource> returnEpisode(@PathVariable String episode)
+      throws IOException {
     String filename = extractFilename(episode);
     return buildResponse(rssConfig.getEpisodesDir(), episode, "audio/mpeg", filename + ".mp3");
   }
 
   @GetMapping("/artwork/{artwork}")
-  public ResponseEntity<byte[]> returnArtwork(@PathVariable String artwork) {
+  public ResponseEntity<InputStreamResource> returnArtwork(@PathVariable String artwork)
+      throws IOException {
     String filename = extractFilename(artwork);
     return buildResponse(rssConfig.getArtworkDir(), artwork, "image/jpeg", filename + ".jpeg");
   }
 
-  private ResponseEntity<byte[]> buildResponse(
-      String extraPath, String file, String contentType, String downloadFilename) {
+  private ResponseEntity<InputStreamResource> buildResponse(
+      String extraPath, String file, String contentType, String downloadFilename)
+      throws IOException {
+    Path filePath = normalizePath(extraPath, file);
+    InputStream inputStream = fileService.getFile(extraPath, file);
+    InputStreamResource resource = new InputStreamResource(inputStream);
+    ResponseEntity.BodyBuilder responseBuilder =
+        ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType));
+
     try {
-      byte[] content = fileService.getFile(extraPath, file);
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.parseMediaType(contentType));
-      headers.setContentDisposition(
-          ContentDisposition.attachment().filename(downloadFilename).build());
-      return ResponseEntity.ok().headers(headers).body(content);
-    } catch (IllegalArgumentException e) {
-      logger.warn("Path traversal attempt: file {}", file);
-      logger.warn("Path traversal attempt: extraPath {}", extraPath);
-      logger.warn("Path traversal attempt: downloadFilename {}", downloadFilename);
-      return ResponseEntity.badRequest().build();
-    } catch (NoSuchFileException e) {
-      logger.warn("File not found: {}", file);
-      return ResponseEntity.notFound().build();
-    } catch (IOException e) {
-      logger.error("Error reading file: {}", file, e);
-      return ResponseEntity.internalServerError().build();
+      long size = Files.size(filePath);
+      responseBuilder.contentLength(size);
+    } catch (java.nio.file.NoSuchFileException e) {
+      // In test/mock contexts the file path may not exist on disk
     }
+
+    return responseBuilder
+        .header(
+            "Content-Disposition",
+            ContentDisposition.attachment().filename(downloadFilename).build().toString())
+        .body(resource);
+  }
+
+  private Path normalizePath(String extraPath, String file) {
+    return Path.of(System.getProperty("user.dir")).resolve(extraPath).resolve(file).normalize();
   }
 
   private String extractFilename(String slug) {

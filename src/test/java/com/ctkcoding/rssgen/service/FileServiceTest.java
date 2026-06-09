@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +17,7 @@ class FileServiceTest {
   private FileService fileService;
   private Path testResourcesDir;
   private RssConfig rssConfig;
+  private InputStream currentStream;
 
   @BeforeEach
   void setUp() throws URISyntaxException {
@@ -39,21 +42,29 @@ class FileServiceTest {
     setBasePath(testResourcesDir);
   }
 
+  @AfterEach
+  void tearDown() throws IOException {
+    if (currentStream != null) currentStream.close();
+  }
+
   @Test
   void returnsRssFile() throws IOException {
-    byte[] result = fileService.getFile("", "rss.xml");
+    currentStream = fileService.getFile("", "rss.xml");
+    byte[] result = currentStream.readAllBytes();
     assertTrue(result.length > 0);
   }
 
   @Test
   void returnsEpisodeFile() throws IOException {
-    byte[] result = fileService.getFile("episodes", "Episode 01.mp3");
+    currentStream = fileService.getFile("episodes", "Episode 01.mp3");
+    byte[] result = currentStream.readAllBytes();
     assertTrue(result.length > 0);
   }
 
   @Test
   void returnsArtworkFile() throws IOException {
-    byte[] result = fileService.getFile("artwork", "Episode 01.jpeg");
+    currentStream = fileService.getFile("artwork", "Episode 01.jpeg");
+    byte[] result = currentStream.readAllBytes();
     assertTrue(result.length > 0);
   }
 
@@ -103,7 +114,8 @@ class FileServiceTest {
 
   @Test
   void allowsDotsInFilename() throws IOException {
-    byte[] result = fileService.getFile("episodes", "Episode 01.mp3");
+    currentStream = fileService.getFile("episodes", "Episode 01.mp3");
+    byte[] result = currentStream.readAllBytes();
     assertTrue(result.length > 0);
   }
 

@@ -2,6 +2,7 @@ package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -29,7 +30,7 @@ public class FileService {
 
   private static final Logger logger = LoggerFactory.getLogger(FileService.class);
 
-  public byte[] getFile(String extraPath, String file) throws IOException {
+  public InputStream getFile(String extraPath, String file) throws IOException {
     if (!dynamicAllowedSubpaths.contains(extraPath)) {
       throw new IllegalArgumentException("Path traversal attempt detected");
     }
@@ -37,7 +38,7 @@ public class FileService {
     Path filePath = normalizePath(basePath, extraPath, file);
     logger.info("resolved full file path: " + filePath);
 
-    return Files.readAllBytes(filePath);
+    return Files.newInputStream(filePath);
   }
 
   private Path normalizePath(Path base, String extraPath, String file) {
