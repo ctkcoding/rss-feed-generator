@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.service.FileService;
+import java.io.ByteArrayInputStream;
 import java.nio.file.NoSuchFileException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,8 @@ class FileControllerTest {
   @Test
   void rss_returnsOkWhenFileExists() throws Exception {
     byte[] expectedContent = "some xml content".getBytes();
-    when(fileService.getFile("info", "rss.xml")).thenReturn(expectedContent);
+    when(fileService.getFile("info", "rss.xml"))
+        .thenReturn(new ByteArrayInputStream(expectedContent));
     when(rssConfig.getRssFileName()).thenReturn("rss.xml");
 
     mockMvc
@@ -52,7 +54,8 @@ class FileControllerTest {
   @Test
   void episode_returnsOkWhenFileExists() throws Exception {
     byte[] expectedContent = "mp3 audio data".getBytes();
-    when(fileService.getFile("episodes", "01 Episode 1.mp3")).thenReturn(expectedContent);
+    when(fileService.getFile("episodes", "01 Episode 1.mp3"))
+        .thenReturn(new ByteArrayInputStream(expectedContent));
 
     mockMvc
         .perform(get("/episodes/01 Episode 1.mp3"))
@@ -65,7 +68,8 @@ class FileControllerTest {
   @Test
   void artwork_returnsOkWhenFileExists() throws Exception {
     byte[] expectedContent = "jpeg image data".getBytes();
-    when(fileService.getFile("artwork", "01 Episode 1.jpeg")).thenReturn(expectedContent);
+    when(fileService.getFile("artwork", "01 Episode 1.jpeg"))
+        .thenReturn(new ByteArrayInputStream(expectedContent));
 
     mockMvc
         .perform(get("/artwork/01 Episode 1.jpeg"))
