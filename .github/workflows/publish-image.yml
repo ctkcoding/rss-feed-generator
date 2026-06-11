@@ -14,7 +14,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  # Converts the repository name to lowercase to comply with Docker image naming standards
+    # Converts the repository name to lowercase to comply with Docker image naming standards
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -24,52 +24,52 @@ jobs:
     steps:
       # Step 1: Check out the source code
       - name: Checkout repository
-        uses: actions/checkout@v4
+      uses: actions/checkout@v4
 
       # Step 2: Set up Java JDK environment
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
 
       # Step 3: Set up and cache Gradle to speed up builds
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v4
 
       # Step 4: Grant execution permission and build the executable JAR file
       - name: Build JAR with Gradle
-        run: |
+      run: |
           chmod +x gradlew
           ./gradlew bootJar
 
       # Step 5: Set up Docker Buildx for advanced container features
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v3
 
       # Step 6: Log in to the GitHub Container Registry
       - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 7: Generate smart Docker tags and labels (Latest and Commit SHA)
       - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=sha,format=short
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+          type=sha,format=short
 
       # Step 8: Build the Docker image and push to GHCR
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ id.meta.outputs.tags }}
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ id.meta.outputs.tags }}
           labels: ${{ id.meta.outputs.labels }}
