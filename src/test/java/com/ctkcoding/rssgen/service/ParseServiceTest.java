@@ -90,6 +90,7 @@ class ParseServiceTest {
     try {
       Path episodesDir = tempDir.resolve("episodes");
       Path artworkDir = tempDir.resolve("artwork");
+      Path infoDir = tempDir.resolve("info");
       Files.createDirectories(episodesDir);
       if (Files.exists(artworkDir)) {
         Files.list(artworkDir)
@@ -104,6 +105,12 @@ class ParseServiceTest {
         Files.delete(artworkDir);
       }
       Files.createDirectories(artworkDir);
+      if (Files.exists(infoDir.resolve("cover.jpg"))) {
+        Files.copy(
+            infoDir.resolve("cover.jpg"),
+            artworkDir.resolve("cover.jpeg"),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+      }
       Path realEpisodesDir = new File("src/test/resources/episodes").toPath();
       if (Files.exists(realEpisodesDir)) {
         Files.list(realEpisodesDir)
@@ -141,8 +148,14 @@ class ParseServiceTest {
   // ============ parseShow tests ============
 
   @Test
-  void parseShow_parsesValidJson() {
+  void parseShow_parsesValidJson() throws IOException {
     loadShowJsonFromResources();
+    Path artworkDir = tempDir.resolve("artwork");
+    Files.createDirectories(artworkDir);
+    Files.copy(
+        Path.of("src/test/resources/artwork/cover.jpeg"),
+        artworkDir.resolve("cover.jpeg"),
+        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
     ParseService service = createService(createConfig("info", "episodes"));
     System.setProperty("user.dir", tempDir.toString());
 
@@ -153,7 +166,7 @@ class ParseServiceTest {
     assertEquals("This show rules", show.getDescription());
     assertEquals("https://timecrisis.apple.com", show.getSite());
     assertEquals("https://podcast.local", show.getLink());
-    assertEquals("cover.jpg", show.getImage());
+    assertEquals("https://podcast.local/artwork/cover.jpeg", show.getImage());
     assertEquals("en-us", show.getLanguage());
     assertNull(show.getEpisodes());
   }

@@ -129,6 +129,33 @@ public class ParseService {
         throw new IllegalArgumentException("Language is missing or blank in show.json");
       }
 
+      String imageFilename = show.getImage();
+      if (imageFilename != null && !imageFilename.isBlank()) {
+        String baseFilename = imageFilename;
+        int lastDot = imageFilename.lastIndexOf('.');
+        if (lastDot > 0) {
+          baseFilename = imageFilename.substring(0, lastDot);
+        }
+
+        Path artworkFilePath =
+            Path.of(System.getProperty("user.dir"))
+                .resolve(rssConfig.getArtworkDir())
+                .resolve(baseFilename + rssConfig.getArtworkFileExtension());
+
+        if (Files.exists(artworkFilePath) && show.getLink() != null) {
+          String encodedFilename =
+              URLEncoder.encode(baseFilename, StandardCharsets.UTF_8).replace("+", "%20");
+          show =
+              show.toBuilder()
+                  .image(
+                      show.getLink()
+                          + "/artwork/"
+                          + encodedFilename
+                          + rssConfig.getArtworkFileExtension())
+                  .build();
+        }
+      }
+
       return show;
     } catch (Exception e) {
       String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
