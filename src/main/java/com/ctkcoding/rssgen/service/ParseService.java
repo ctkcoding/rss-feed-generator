@@ -2,6 +2,7 @@ package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.handler.ErrorLogHandler;
+import com.ctkcoding.rssgen.handler.XmlSanitizer;
 import com.ctkcoding.rssgen.model.Episode;
 import com.ctkcoding.rssgen.model.Show;
 import com.mpatric.mp3agic.ID3v2;
@@ -129,6 +130,13 @@ public class ParseService {
         throw new IllegalArgumentException("Language is missing or blank in show.json");
       }
 
+      if (show.getTitle() != null) {
+        show = show.toBuilder().title(XmlSanitizer.sanitize(show.getTitle())).build();
+      }
+      if (show.getDescription() != null) {
+        show = show.toBuilder().description(XmlSanitizer.sanitize(show.getDescription())).build();
+      }
+
       String imageFilename = show.getImage();
       if (imageFilename != null && !imageFilename.isBlank()) {
         String baseFilename = imageFilename;
@@ -211,11 +219,11 @@ public class ParseService {
         if (tag != null) {
           String tit2 = tag.getTitle();
           if (tit2 != null && !tit2.isBlank()) {
-            title = tit2;
+            title = XmlSanitizer.sanitize(tit2);
           }
           String tdes = tag.getComment();
           if (tdes != null && !tdes.isBlank()) {
-            description = tdes;
+            description = XmlSanitizer.sanitize(tdes);
           }
 
           if (rssConfig.getExtractArtwork()) {
