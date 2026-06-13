@@ -104,11 +104,14 @@ public class WatcherService {
     }
   }
 
-  boolean isEpisodeFile(Path filename) {
+   boolean isEpisodeFile(Path filename) {
     String name = filename.toString().toLowerCase();
+    if (filename.getFileName().toString().startsWith("._")) {
+     return false;
+    }
     String ext = rssConfig.getEpisodeFileExtension().toLowerCase();
     return ext.isEmpty() || name.endsWith(ext);
-  }
+   }
 
   @PreDestroy
   void stopWatching() {

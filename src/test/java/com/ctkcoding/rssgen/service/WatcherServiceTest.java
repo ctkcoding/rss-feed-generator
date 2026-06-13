@@ -98,15 +98,24 @@ class WatcherServiceTest {
     assertTrue(watcherService.isEpisodeFile(Path.of("Episode.Mp3")));
   }
 
-  @Test
-  void isEpisodeFile_emptyExtensionMatchesAny() {
-    when(rssConfig.getEpisodeFileExtension()).thenReturn("");
+   @Test
+   void isEpisodeFile_emptyExtensionMatchesAny() {
+     when(rssConfig.getEpisodeFileExtension()).thenReturn("");
 
-    assertTrue(watcherService.isEpisodeFile(Path.of("anything.txt")));
-    assertTrue(watcherService.isEpisodeFile(Path.of("anything.mp3")));
-  }
+     assertTrue(watcherService.isEpisodeFile(Path.of("anything.txt")));
+     assertTrue(watcherService.isEpisodeFile(Path.of("anything.mp3")));
+    }
 
-  // ============ Sad path: stopWatching ================
+    @Test
+    void isEpisodeFile_skipsMacOSResourceForkFiles() {
+        when(rssConfig.getEpisodeFileExtension()).thenReturn(".mp3");
+
+        assertFalse(watcherService.isEpisodeFile(Path.of("._episode.mp3")));
+        assertFalse(watcherService.isEpisodeFile(Path.of("._DS_Store")));
+        assertTrue(watcherService.isEpisodeFile(Path.of("episode.mp3")));
+    }
+
+    // ============ Sad path: stopWatching ================
 
   @Test
   void stopWatching_nullThreadAndFileWatchService_doesNotNpe() throws Exception {

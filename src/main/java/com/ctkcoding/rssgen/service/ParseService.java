@@ -80,6 +80,7 @@ public class ParseService {
               .filter(
                   p ->
                       p.toFile().isFile()
+                          && !p.getFileName().toString().startsWith("._")
                           && p.toString().endsWith(rssConfig.getEpisodeFileExtension()))
               .map(Path::toFile)
               .sorted(Comparator.comparing(File::lastModified).reversed())
@@ -159,8 +160,9 @@ public class ParseService {
               show.toBuilder()
                   .image(
                       show.getLink()
-                              // todo - clean up these hard links? configured or final strings hard coded
-                              + "/artwork/"
+                          // todo - clean up these hard links? configured or final strings hard
+                          // coded
+                          + "/artwork/"
                           + encodedFilename
                           + rssConfig.getArtworkFileExtension())
                   .build();

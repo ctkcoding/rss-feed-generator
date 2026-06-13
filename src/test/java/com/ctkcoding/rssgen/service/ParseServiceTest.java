@@ -604,4 +604,30 @@ class ParseServiceTest {
     Path artworkFile = tempDir.resolve("artwork").resolve("Episode 01.png");
     assertFalse(Files.exists(artworkFile), "Artwork should not be written due to MIME mismatch");
   }
+
+  @Test
+  void generateShow_skipsMacOSResourceForkFiles() throws IOException {
+    loadShowJsonFromResources();
+    copyEpisodes();
+
+    Path episodesDir = tempDir.resolve("episodes");
+
+    Files.write(episodesDir.resolve("._Episode 01.mp3"), new byte[128]);
+    Files.write(episodesDir.resolve("._extra.mp3"), new byte[64]);
+    Files.write(episodesDir.resolve("._DS_Store"), new byte[512]);
+
+    ParseService service = createService(createConfig("info", "episodes"));
+    System.setProperty("user.dir", tempDir.toString());
+
+    Show show = service.generateShow();
+
+    for (Episode ep : show.getEpisodes()) {
+      assertNotEquals("._Episode 01.mp3", ep.getTitle());
+      assertNotEquals("._extra.mp3", ep.getTitle());
+    }
+
+    for (Episode ep : show.getEpisodes()) {
+      assertFalse(ep.getTitle().startsWith("._"));
+    }
+  }
 }
