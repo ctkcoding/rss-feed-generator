@@ -1,6 +1,7 @@
 package com.ctkcoding.rssgen.service;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.utils.Constants;
 import com.ctkcoding.rssgen.handler.ErrorLogHandler;
 import com.ctkcoding.rssgen.handler.XmlSanitizer;
 import com.ctkcoding.rssgen.model.Episode;
@@ -160,9 +161,7 @@ public class ParseService {
               show.toBuilder()
                   .image(
                       show.getLink()
-                          // todo - clean up these hard links? configured or final strings hard
-                          // coded
-                          + "/artwork/"
+                          + Constants.ARTWORK_URL_PATH
                           + encodedFilename
                           + rssConfig.getArtworkFileExtension())
                   .build();
@@ -265,11 +264,15 @@ public class ParseService {
                   errorLogHandler.writeError(
                       ParseErrorReason.ARTWORK_MIME_MISMATCH,
                       episodeFile,
-                      "MIME type '"
+                      "Artwork from MP3 is "
                           + mime
-                          + "' doesn't match configured extension '"
+                          + " but configured extension is "
                           + configExt
-                          + "'");
+                          + ". Supported extensions for "
+                          + mime
+                          + ": "
+                          + String.join(", ", acceptedExtensions)
+                          + ". Set rss.artwork-file-extension to match your artwork files.");
                 }
               }
             }
@@ -293,10 +296,12 @@ public class ParseService {
     String encodedArtworkFilename =
         URLEncoder.encode(filenameNoExt, StandardCharsets.UTF_8).replace("+", "%20");
 
-    // todo - clean up these hard links? configured or final strings hard coded
-    String url = showLink + "/episodes/" + encodedFilename;
+    String url = showLink + Constants.EPISODE_URL_PATH + encodedFilename;
     String image =
-        showLink + "/artwork/" + encodedArtworkFilename + rssConfig.getArtworkFileExtension();
+        showLink
+            + Constants.ARTWORK_URL_PATH
+            + encodedArtworkFilename
+            + rssConfig.getArtworkFileExtension();
 
     long fileSize = 0;
     try {

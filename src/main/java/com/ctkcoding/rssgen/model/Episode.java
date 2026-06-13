@@ -10,7 +10,7 @@ public class Episode {
   String title;
   String description;
   String url;
-  LocalDateTime pubDate; // todo - does XML need this as lower case?
+  LocalDateTime pubDate;
   String image;
   String enclosureUrl; // "{url: enclosure, type: \"audio/mpeg\"}"
   String enclosureType; // type: \"audio/mpeg\"

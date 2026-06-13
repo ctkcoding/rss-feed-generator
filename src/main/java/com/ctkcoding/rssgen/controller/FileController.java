@@ -40,14 +40,22 @@ public class FileController {
   public ResponseEntity<InputStreamResource> returnEpisode(@PathVariable String episode)
       throws IOException {
     String filename = extractFilename(episode);
-    return buildResponse(rssConfig.getEpisodesDir(), episode, "audio/mpeg", filename + ".mp3");
+    return buildResponse(
+        rssConfig.getEpisodesDir(),
+        episode,
+        "audio/mpeg",
+        filename + rssConfig.getEpisodeFileExtension());
   }
 
   @GetMapping("/artwork/{artwork}")
   public ResponseEntity<InputStreamResource> returnArtwork(@PathVariable String artwork)
       throws IOException {
     String filename = extractFilename(artwork);
-    return buildResponse(rssConfig.getArtworkDir(), artwork, "image/jpeg", filename + ".jpeg");
+    return buildResponse(
+        rssConfig.getArtworkDir(),
+        artwork,
+        "image/jpeg",
+        filename + rssConfig.getArtworkFileExtension());
   }
 
   private ResponseEntity<InputStreamResource> buildResponse(

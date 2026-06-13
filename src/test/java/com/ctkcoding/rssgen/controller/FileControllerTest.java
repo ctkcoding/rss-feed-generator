@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.ctkcoding.rssgen.config.RssConfig;
+import com.ctkcoding.rssgen.utils.Constants;
 import com.ctkcoding.rssgen.service.FileService;
 import java.io.ByteArrayInputStream;
 import java.nio.file.NoSuchFileException;
@@ -44,7 +45,7 @@ class FileControllerTest {
     when(rssConfig.getRssFileName()).thenReturn("rss.xml");
 
     mockMvc
-        .perform(get("/rss"))
+        .perform(get(Constants.RSS_URL))
         .andExpect(status().isOk())
         .andExpect(content().contentType("text/xml"))
         .andExpect(header().string("Content-Disposition", startsWith("attachment; filename=")))
@@ -58,7 +59,7 @@ class FileControllerTest {
         .thenReturn(new ByteArrayInputStream(expectedContent));
 
     mockMvc
-        .perform(get("/episodes/01 Episode 1.mp3"))
+        .perform(get(Constants.EPISODE_URL_PATH + "01 Episode 1.mp3"))
         .andExpect(status().isOk())
         .andExpect(content().contentType("audio/mpeg"))
         .andExpect(header().string("Content-Disposition", startsWith("attachment; filename=")))
@@ -72,7 +73,7 @@ class FileControllerTest {
         .thenReturn(new ByteArrayInputStream(expectedContent));
 
     mockMvc
-        .perform(get("/artwork/01 Episode 1.jpeg"))
+        .perform(get(Constants.ARTWORK_URL_PATH + "01 Episode 1.jpeg"))
         .andExpect(status().isOk())
         .andExpect(content().contentType("image/jpeg"))
         .andExpect(header().string("Content-Disposition", startsWith("attachment; filename=")))
@@ -85,7 +86,7 @@ class FileControllerTest {
     when(fileService.getFile("info", "missing.xml"))
         .thenThrow(new NoSuchFileException("missing.xml"));
 
-    mockMvc.perform(get("/rss")).andExpect(status().isNotFound());
+    mockMvc.perform(get(Constants.RSS_URL)).andExpect(status().isNotFound());
   }
 
   @Test
@@ -93,7 +94,9 @@ class FileControllerTest {
     when(fileService.getFile("episodes", "missing.mp3"))
         .thenThrow(new NoSuchFileException("missing.mp3"));
 
-    mockMvc.perform(get("/episodes/missing.mp3")).andExpect(status().isNotFound());
+    mockMvc
+        .perform(get(Constants.EPISODE_URL_PATH + "missing.mp3"))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -101,6 +104,8 @@ class FileControllerTest {
     when(fileService.getFile("artwork", "missing.jpg"))
         .thenThrow(new NoSuchFileException("missing.jpg"));
 
-    mockMvc.perform(get("/artwork/missing.jpg")).andExpect(status().isNotFound());
+    mockMvc
+        .perform(get(Constants.ARTWORK_URL_PATH + "missing.jpg"))
+        .andExpect(status().isNotFound());
   }
 }
