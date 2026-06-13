@@ -14,7 +14,7 @@ services:
       RSS_FILE_WATCH: "true"
       RSS_RUN_ON_STARTUP: "false"
       RSS_LANGUAGE: en-us
-      RSS_ERROR_LOG_FILE: parse-errors.log
+      RSS_ERROR_LOG_FILE_PREFIX: parse-errors-
       RSS_FAILURE_LIMIT: "5"
     volumes:
        - ./artwork:/app/artwork
