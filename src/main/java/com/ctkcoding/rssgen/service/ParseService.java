@@ -150,6 +150,8 @@ public class ParseService {
                 .resolve(rssConfig.getArtworkDir())
                 .resolve(baseFilename + rssConfig.getArtworkFileExtension());
 
+        logger.info("cover file expected at: " + artworkFilePath);
+
         if (Files.exists(artworkFilePath) && show.getLink() != null) {
           String encodedFilename =
               URLEncoder.encode(baseFilename, StandardCharsets.UTF_8).replace("+", "%20");
@@ -157,7 +159,8 @@ public class ParseService {
               show.toBuilder()
                   .image(
                       show.getLink()
-                          + "/artwork/"
+                              // todo - clean up these hard links? configured or final strings hard coded
+                              + "/artwork/"
                           + encodedFilename
                           + rssConfig.getArtworkFileExtension())
                   .build();
@@ -288,6 +291,7 @@ public class ParseService {
     String encodedArtworkFilename =
         URLEncoder.encode(filenameNoExt, StandardCharsets.UTF_8).replace("+", "%20");
 
+    // todo - clean up these hard links? configured or final strings hard coded
     String url = showLink + "/episodes/" + encodedFilename;
     String image =
         showLink + "/artwork/" + encodedArtworkFilename + rssConfig.getArtworkFileExtension();
