@@ -8,4 +8,6 @@ public final class Constants {
   public static final String EPISODE_URL_PATH = "/episodes/";
   public static final String ARTWORK_URL_PATH = "/artwork/";
 
+  // File extension defaults
+  public static final String LOG_FILE_EXTENSION = ".log";
 }

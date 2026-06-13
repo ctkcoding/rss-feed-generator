@@ -61,7 +61,7 @@ class ParseServiceTest {
     when(config.getArtworkFileExtension()).thenReturn(".jpeg");
     when(config.getArtworkDir()).thenReturn("artwork");
     when(config.getExtractArtwork()).thenReturn(extractArtwork);
-    when(config.getErrorLogFile()).thenReturn("parse-errors.log");
+    when(config.getErrorLogFilePrefix()).thenReturn("parse-errors-");
     return config;
   }
 
@@ -499,7 +499,7 @@ class ParseServiceTest {
     when(config.getArtworkFileExtension()).thenReturn(".jpeg");
     when(config.getArtworkDir()).thenReturn("artwork");
     when(config.getExtractArtwork()).thenReturn(false);
-    when(config.getErrorLogFile()).thenReturn("parse-errors.log");
+    when(config.getErrorLogFilePrefix()).thenReturn("parse-errors-");
 
     ErrorLogHandler errorLogHandler = mock(ErrorLogHandler.class);
     ParseService service = new ParseService(config, errorLogHandler);

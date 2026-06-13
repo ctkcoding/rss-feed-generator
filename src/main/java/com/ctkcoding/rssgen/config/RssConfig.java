@@ -26,6 +26,5 @@ public class RssConfig {
   private Boolean runOnStartup;
   private int failureLimit;
 
-  // todo - clean
-  private String errorLogFile = "parse-errors.log";
+  private String errorLogFilePrefix = "parse-errors-";
 }

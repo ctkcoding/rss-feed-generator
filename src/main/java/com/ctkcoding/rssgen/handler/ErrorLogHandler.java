@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import static com.ctkcoding.rssgen.utils.Constants.LOG_FILE_EXTENSION;
+
 @Service
 public class ErrorLogHandler {
 
@@ -27,7 +29,7 @@ public class ErrorLogHandler {
 
   public String startParseRun() {
     String timestamp = LocalDateTime.now().format(FILE_TIME_FMT);
-    currentLogFile = "parse-errors-" + timestamp + ".log";
+    currentLogFile = rssConfig.getErrorLogFilePrefix() + timestamp + LOG_FILE_EXTENSION;
     String basePath = System.getProperty("user.dir");
     Path errorLogDir = Path.of(basePath, rssConfig.getInfoDir());
     try {

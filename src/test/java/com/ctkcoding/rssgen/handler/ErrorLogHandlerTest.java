@@ -29,9 +29,9 @@ class ErrorLogHandlerTest {
     System.setProperty("user.dir", originalUserDir);
   }
 
-  private ErrorLogHandler createHandler(String errorLogFile, String artDir) {
+  private ErrorLogHandler createHandler(String errorLogFilePrefix, String artDir) {
     RssConfig config = Mockito.mock(RssConfig.class);
-    when(config.getErrorLogFile()).thenReturn(errorLogFile);
+    when(config.getErrorLogFilePrefix()).thenReturn(errorLogFilePrefix);
     when(config.getArtworkDir()).thenReturn(artDir);
     when(config.getInfoDir()).thenReturn("info");
     System.setProperty("user.dir", tempDir.toString());
@@ -40,7 +40,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void startParseRun_returnsTimestampedFilename() {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     String filename = handler.startParseRun();
 
     assertNotNull(filename);
@@ -50,7 +50,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void startParseRun_createsLogFile() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     String filename = handler.startParseRun();
     Path logFile = tempDir.resolve("info").resolve(filename);
 
@@ -63,7 +63,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void writeError_appendsToCurrentLogFile() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     handler.startParseRun();
     String filename = handler.getCurrentLogFile();
 
@@ -83,7 +83,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void writeError_warningUsesWarnPrefix() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     handler.startParseRun();
 
     handler.writeError(ParseErrorReason.EPISODE_FILE_SIZE_UNKNOWN, "test.mp3", "No such file");
@@ -96,7 +96,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void writeError_noopWithoutStartParseRun() {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     // Should not throw NPE
     assertDoesNotThrow(
         () -> handler.writeError(ParseErrorReason.EPISODE_MP3_PARSE_ERROR, "test.mp3", "detail"));
@@ -104,7 +104,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void writeSummary_appendsSummaryLine() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     handler.startParseRun();
 
     handler.writeError(ParseErrorReason.EPISODE_MP3_PARSE_ERROR, "bad.mp3", "corrupt file");
@@ -117,20 +117,20 @@ class ErrorLogHandlerTest {
 
   @Test
   void writeSummary_noopWithoutStartParseRun() {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     assertDoesNotThrow(() -> handler.writeSummary(0, 0));
   }
 
   @Test
   void writeSummary_noopWhenLogFileDoesNotExist() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     // Don't call startParseRun, so no file exists
     assertDoesNotThrow(() -> handler.writeSummary(1, 0));
   }
 
   @Test
   void writeError_showsReasonLabel_andContext() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     handler.startParseRun();
 
     handler.writeError(
@@ -145,7 +145,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void writeError_showsReasonLabel_mimeMismatch() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     handler.startParseRun();
 
     handler.writeError(
@@ -161,7 +161,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void startParseRun_headerWrittenToLogFile() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     handler.startParseRun();
 
     Path logFile = tempDir.resolve("info").resolve(handler.getCurrentLogFile());
@@ -171,7 +171,7 @@ class ErrorLogHandlerTest {
 
   @Test
   void writeError_contextBlank_skipsDASH() throws IOException {
-    ErrorLogHandler handler = createHandler("parse-errors.log", "artwork");
+    ErrorLogHandler handler = createHandler("parse-errors-", "artwork");
     handler.startParseRun();
 
     handler.writeError(ParseErrorReason.EPISODE_PUB_DATE_MISSING, "", "file not found");
