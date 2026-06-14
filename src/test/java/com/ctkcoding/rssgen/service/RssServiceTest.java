@@ -45,7 +45,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     mockErrorLogHandler = Mockito.mock(ErrorLogHandler.class);
     Mockito.doNothing().when(mockErrorLogHandler).writeError(any(), anyString(), anyString());
     Mockito.doNothing().when(mockErrorLogHandler).writeSummary(anyInt(), anyInt());
@@ -148,7 +149,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show = createTestShow();
@@ -176,7 +178,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show = createTestShow();
@@ -211,7 +214,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show = createTestShow();
@@ -257,7 +261,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show = createTestShow();
@@ -297,7 +302,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show = createTestShow();
@@ -334,7 +340,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show =
@@ -368,7 +375,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show = createTestShow();
@@ -395,7 +403,8 @@ public class RssServiceTest {
             Boolean.valueOf(false),
             Boolean.valueOf(false),
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     rssService = createService(rssConfig);
 
     Show show = createTestShow();

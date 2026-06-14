@@ -27,4 +27,5 @@ public class RssConfig {
   private int failureLimit;
 
   private String errorLogFilePrefix = "parse-errors-";
+  private int fileDelaySeconds = 30;
 }

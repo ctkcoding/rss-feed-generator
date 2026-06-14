@@ -1,5 +1,7 @@
 package com.ctkcoding.rssgen.handler;
 
+import static com.ctkcoding.rssgen.utils.Constants.LOG_FILE_EXTENSION;
+
 import com.ctkcoding.rssgen.config.RssConfig;
 import com.ctkcoding.rssgen.service.ParseErrorReason;
 import java.io.IOException;
@@ -10,8 +12,6 @@ import java.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import static com.ctkcoding.rssgen.utils.Constants.LOG_FILE_EXTENSION;
 
 @Service
 public class ErrorLogHandler {

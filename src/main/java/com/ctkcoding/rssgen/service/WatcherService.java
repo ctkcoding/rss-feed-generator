@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -20,11 +21,12 @@ public class WatcherService {
     AtomicBoolean newFileChanges = new AtomicBoolean(false);
     AtomicInteger failureCounter = new AtomicInteger(0);
     AtomicBoolean successfulParse = new AtomicBoolean(false);
+    AtomicLong newestFileModifiedTime = new AtomicLong(0);
 
-  private final ParseService parseService;
-  private final RssService rssService;
-  private final RssConfig rssConfig;
-  private final ErrorLogHandler errorLogHandler;
+   private final ParseService parseService;
+   private final RssService rssService;
+   private final RssConfig rssConfig;
+   private final ErrorLogHandler errorLogHandler;
 
     WatcherService(
         ParseService parseService,
@@ -35,11 +37,12 @@ public class WatcherService {
       this.rssService = rssService;
       this.rssConfig = rssConfig;
       this.errorLogHandler = errorLogHandler;
-       }
+         }
 
   WatchService fileWatchService;
   Thread watchThread;
   volatile boolean running = false;
+  Path episodesDir;
 
     @EventListener(ApplicationStartedEvent.class)
     void startWatching() {
@@ -48,14 +51,16 @@ public class WatcherService {
        return;
      }
 
-    Path episodesDir = Path.of(System.getProperty("user.dir")).resolve(rssConfig.getEpisodesDir());
+    Path episodesPath = Path.of(System.getProperty("user.dir")).resolve(rssConfig.getEpisodesDir());
 
-    if (!Files.exists(episodesDir) || !Files.isDirectory(episodesDir)) {
+    if (!Files.exists(episodesPath) || !Files.isDirectory(episodesPath)) {
       throw new IllegalStateException(
-          "Episodes directory does not exist: "
-              + episodesDir
-              + ". This is required for the application to function.");
-    }
+           "Episodes directory does not exist: "
+               + episodesPath
+               + ". This is required for the application to function.");
+     }
+
+    this.episodesDir = episodesPath;
 
     try {
       fileWatchService = FileSystems.getDefault().newWatchService();
@@ -81,18 +86,27 @@ public class WatcherService {
       try {
         WatchKey key = fileWatchService.take();
         for (WatchEvent<?> event : key.pollEvents()) {
-          if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
-            continue;
-          }
+           if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
+             continue;
+            }
 
-          Path filename = (Path) event.context();
-          if (!isEpisodeFile(filename)) {
-            continue;
-          }
+           Path filename = (Path) event.context();
+           if (!isEpisodeFile(filename)) {
+             continue;
+            }
 
-          log.info("File change detected: {} ({})", filename, event.kind());
-          newFileChanges.set(true);
-        }
+           log.info("File change detected: {} ({})", filename, event.kind());
+
+           try {
+             long lastModified = Files.getLastModifiedTime(episodesDir.resolve(filename)).toMillis();
+             newestFileModifiedTime.set(lastModified);
+           } catch (IOException e) {
+             log.warn("Could not get last modified time for file: {}", filename);
+             newestFileModifiedTime.set(System.currentTimeMillis());
+           }
+
+           newFileChanges.set(true);
+          }
         key.reset();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
@@ -134,28 +148,39 @@ public class WatcherService {
     log.info("Stopped watching");
   }
 
-  @Scheduled(cron = "0 * * * * *")
+   @Scheduled(cron = "0 * * * * *")
   public void scheduledParseCheck() {
-          if (newFileChanges.get() || (Boolean.TRUE.equals(rssConfig.getRunOnStartup()) && !successfulParse.get())) {
-              try {
-                  log.info("New file changes found. Kicking off parse and write");
-                  Show show = parseService.generateShow();
-                  String path = rssService.writeRss(show);
-                  log.info("RSS feed written to: {}", path);
-                  newFileChanges.set(false);
-                  successfulParse.set(true);
-              } catch (Exception e) {
-                  log.error("Failed to generate RSS feed: {}", e.getMessage(), e);
-                  failureCounter.incrementAndGet();
-                  if (failureCounter.get() > rssConfig.getFailureLimit()) {
-                      newFileChanges.set(false);
-                      log.error(
-                              "Reached RSS feed generation failure limit of {}. Ending retries.",
-                              rssConfig.getFailureLimit());
-                  }
-              }
-          } else {
-              log.info("No new changes found to files. Napping for a minute!");
-          }
-      }
+           boolean shouldParse = newFileChanges.get() || (Boolean.TRUE.equals(rssConfig.getRunOnStartup()) && !successfulParse.get());
+           if (shouldParse) {
+               long newestModified = newestFileModifiedTime.get();
+               if (newestModified > 0) {
+                   long age = System.currentTimeMillis() - newestModified;
+                    if (age < rssConfig.getFileDelaySeconds() * 1000L) {
+                       log.info("Skipping parse - file changed {:.1f} seconds ago (< {}s cooldown)", age / 1000.0, rssConfig.getFileDelaySeconds());
+                       return;
+                   }
+               }
+
+               try {
+                   log.info("New file changes found. Kicking off parse and write");
+                   Show show = parseService.generateShow();
+                   String path = rssService.writeRss(show);
+                   log.info("RSS feed written to: {}", path);
+                   newFileChanges.set(false);
+                   successfulParse.set(true);
+                   newestFileModifiedTime.set(0);
+                } catch (Exception e) {
+                   log.error("Failed to generate RSS feed: {}", e.getMessage(), e);
+                   failureCounter.incrementAndGet();
+                   if (failureCounter.get() > rssConfig.getFailureLimit()) {
+                       newFileChanges.set(false);
+                       log.error(
+                                "Reached RSS feed generation failure limit of {}. Ending retries.",
+                               rssConfig.getFailureLimit());
+                    }
+                }
+            } else {
+               log.info("No new changes found to files. Napping for a minute!");
+            }
+        }
 }

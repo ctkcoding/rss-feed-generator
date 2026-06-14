@@ -35,7 +35,8 @@ class FileServiceTest {
             true,
             true,
             5,
-            "parse-errors.log");
+            "parse-errors.log",
+            30);
     fileService = new FileService(rssConfig);
     String rssXmlPath = getClass().getResource("/rss.xml").toURI().getPath();
     testResourcesDir = Path.of(rssXmlPath).getParent();
