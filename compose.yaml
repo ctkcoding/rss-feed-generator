@@ -16,6 +16,7 @@ services:
       RSS_LANGUAGE: en-us
       RSS_ERROR_LOG_FILE_PREFIX: parse-errors-
       RSS_FAILURE_LIMIT: "5"
+      RSS_FILE_DELAY_SECONDS: "30"
     volumes:
        - ./artwork:/app/artwork
        - ./episodes:/app/episodes

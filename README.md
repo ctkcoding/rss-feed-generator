@@ -86,6 +86,7 @@ All settings can be configured via Spring properties in `application.properties`
 | `rss.language` | `RSS_LANGUAGE` | `en-us` | Default language code |
 | `rss.error-log-file-prefix` | `RSS_ERROR_LOG_FILE` | `parse-errors-` | Prefix for error log files |
 | `rss.failure-limit` | `RSS_FAILURE_LIMIT` | `5` | Max RSS generation failures before stopping retries |
+| `rss.file-delay-seconds` | `RSS_FILE_DELAY_SECONDS` | `30` | Seconds to wait after detecting a file change before regenerating RSS. Prevents parsing incomplete writes. Set to `0` for immediate parsing on any file change. |
 
 ### Container overrides
 
@@ -170,4 +171,15 @@ The app has two mechanisms for RSS regeneration:
 1. **File watcher** (default: enabled) — monitors the episodes directory using Java's `WatchService` and rebuilds the RSS feed when files are created, deleted, or modified.
 2. **Scheduled poll** (cron: every minute) — checks for new file changes and rebuilds if detected. Also triggers a one-time parse on startup if `rss.run-on-startup` is `true`.
 
-Failed RSS generations are retried up to `rss.failure-limit` times before being abandoned. Errors are logged to files with the prefix `rss.error-log-file-prefix`.
+### Cooldown
+
+By default, the app waits 30 seconds after detecting a file change before regenerating the RSS feed. This prevents parsing partially-written files, which can happen when transferring large MP3 files into the episodes directory. The cooldown applies to **all** RSS regeneration triggers — including startup parses.
+
+Override the cooldown with:
+- Environment variable: `RSS_FILE_DELAY_SECONDS=0` (or any number of seconds)
+- Property: `rss.file-delay-seconds=0`
+- Docker Compose: add `RSS_FILE_DELAY_SECONDS` to the environment section
+
+Set to `0` to disable the cooldown and parse immediately on file change.
+
+### Container overrides
