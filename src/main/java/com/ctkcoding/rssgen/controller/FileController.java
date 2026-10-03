@@ -86,7 +86,7 @@ public class FileController {
   }
 
   private String extractFilename(String slug) {
-    if (slug.contains("/") || slug.contains("..")) {
+    if (java.util.Arrays.stream(slug.split("/")).anyMatch(p -> p.equals(".") || p.equals(".."))) {
       throw new IllegalArgumentException("Invalid filename");
     }
     int lastDot = slug.lastIndexOf('.');
