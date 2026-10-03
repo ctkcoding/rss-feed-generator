@@ -108,4 +108,39 @@ class FileControllerTest {
         .perform(get(Constants.ARTWORK_URL_PATH + "missing.jpg"))
         .andExpect(status().isNotFound());
   }
+
+  @Test
+  void episode_allowsFilenameWithConsecutiveDots() throws Exception {
+    String filename = "368 - Ep. 193 - Iow...what.mp3";
+    byte[] expectedContent = "mp3 audio data".getBytes();
+    when(fileService.getFile("episodes", filename))
+        .thenReturn(new ByteArrayInputStream(expectedContent));
+
+    mockMvc
+        .perform(get(Constants.EPISODE_URL_PATH + filename))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType("audio/mpeg"))
+        .andExpect(content().bytes(expectedContent));
+  }
+
+  @Test
+  void artwork_allowsFilenameWithConsecutiveDots() throws Exception {
+    String filename = "368 - Ep. 193 - Iow...what.jpeg";
+    byte[] expectedContent = "jpeg image data".getBytes();
+    when(fileService.getFile("artwork", filename))
+        .thenReturn(new ByteArrayInputStream(expectedContent));
+
+    mockMvc
+        .perform(get(Constants.ARTWORK_URL_PATH + filename))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType("image/jpeg"))
+        .andExpect(content().bytes(expectedContent));
+  }
+
+  @Test
+  void episode_rejectsPathTraversalSegment() {
+    FileController controller = new FileController(fileService, rssConfig);
+    org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalArgumentException.class, () -> controller.returnEpisode("../../etc/passwd"));
+  }
 }
